@@ -1,17 +1,20 @@
+import os
 import streamlit as st
 from streamlit_option_menu import option_menu
 import pandas as pd
 import matplotlib.pyplot as plt
 import sqlite3
-import os
 from datetime import datetime
 from io import BytesIO
 from fpdf import FPDF
 
 # Define the database path
-DB_PATH = '/mnt/data/database_sekolah.db'
+DB_DIR = '/mnt/data'
+DB_PATH = os.path.join(DB_DIR, 'database_sekolah.db')
 
 def get_db_connection():
+    if not os.path.exists(DB_DIR):
+        os.makedirs(DB_DIR)
     return sqlite3.connect(DB_PATH)
 
 def create_tables():
@@ -66,7 +69,7 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
         "Biaya SPP/Bulan": [biaya_spp]
     })
     st.session_state.pembayaran_spp = pd.concat([st.session_state.pembayaran_spp, new_row], ignore_index=True)
-    st.session_state.pembayaran_spp.to_csv('/mnt/data/pembayaran_spp.csv', index=False)
+    st.session_state.pembayaran_spp.to_csv(os.path.join(DB_DIR, 'pembayaran_spp.csv'), index=False)
 
 # Function to save teacher salary to SQLite
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
