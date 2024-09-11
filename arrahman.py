@@ -114,31 +114,6 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
 
     return pdf_output
 
-def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
-    """Save teacher salary details to SQLite and CSV."""
-    try:
-        conn = get_db_connection()
-        c = conn.cursor()
-        # Save to SQLite
-        c.execute('INSERT INTO gaji_guru (nama_guru, bulan, gaji, tunjangan, tanggal) VALUES (?, ?, ?, ?, ?)',
-                  (nama_guru, bulan, gaji, tunjangan, datetime.now().strftime('%Y-%m-%d')))
-        conn.commit()
-        conn.close()
-
-        # Save to CSV
-        df_gaji = pd.DataFrame([{
-            'Nama Guru': nama_guru,
-            'Bulan': bulan,
-            'Gaji Pokok': gaji,
-            'Tunjangan': tunjangan,
-            'Tanggal': datetime.now().strftime('%Y-%m-%d')
-        }])
-        df_gaji.to_csv('gaji_guru.csv', mode='a', header=not os.path.exists('gaji_guru.csv'), index=False)
-    except sqlite3.OperationalError as e:
-        print(f"SQLite OperationalError: {e}")
-    except Exception as e:
-        print(f"Error saving gaji guru: {e}")
-
 # Initialize the database and create tables
 create_tables()
 
@@ -164,10 +139,13 @@ if selected == "Pembayaran SPP":
     
     # Cek apakah data pembayaran sudah ada di session state, jika belum ambil dari database
     if 'pembayaran_spp' not in st.session_state:
+        conn = get_db_connection()  # Create a connection to the database
+        c = conn.cursor()           # Create a cursor object
         c.execute('SELECT * FROM pembayaran_spp')
         data_spp = c.fetchall()
-        df_spp = pd.DataFrame(data_spp, columns=["ID", "Nama Siswa", "Kelas", "Bulan", "Biaya SPP/Bulan", "Jumlah Pembayaran", "Tanggal"])
+        df_spp = pd.DataFrame(data_spp, columns=["ID", "Nama Siswa", "Kelas", "Bulan", "Jumlah Pembayaran", "Tanggal"])
         st.session_state.pembayaran_spp = df_spp
+        conn.close()                # Close the connection after fetching the data
     
     # Simulasi input data pembayaran SPP menggunakan form
     with st.form("pembayaran_form"):
@@ -181,19 +159,16 @@ if selected == "Pembayaran SPP":
         submitted = st.form_submit_button("Bayar")
         
         if submitted:
-            save_pembayaran_spp(conn, nama_siswa, kelas, bulan, jumlah, biaya_spp)
+            save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             st.success(f"Pembayaran SPP untuk {nama_siswa} berhasil ditambahkan!")
     
             # Generate PDF receipt
             pdf = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             
             # Button to download PDF receipt
-            pdf_output = BytesIO()
-            pdf.output(pdf_output)
-            pdf_output.seek(0)
             st.download_button(
                 label="Download Kwitansi",
-                data=pdf_output,
+                data=pdf,
                 file_name=f"Kwitansi_SPP_{nama_siswa}_{bulan}.pdf",
                 mime="application/pdf"
             )
@@ -211,37 +186,12 @@ if selected == "Pembayaran SPP":
         filtered_data = filtered_data[filtered_data["Kelas"] == search_kelas]
     
     # Adding columns for Total Tagihan, SPP Terbayar, and Sisa Tagihan
-    filtered_data['Total Tagihan SPP 1 Tahun (Rp)'] = filtered_data['Biaya SPP/Bulan'] * 12
+    filtered_data['Total Tagihan SPP 1 Tahun (Rp)'] = filtered_data['Jumlah Pembayaran'] * 12
     filtered_data['SPP yang Sudah Terbayar (Rp)'] = filtered_data.groupby(['Nama Siswa', 'Kelas'])['Jumlah Pembayaran'].transform('sum')
     filtered_data['Sisa Tagihan SPP (Rp)'] = filtered_data['Total Tagihan SPP 1 Tahun (Rp)'] - filtered_data['SPP yang Sudah Terbayar (Rp)']
     
-    # Tampilkan data pembayaran SPP
-    st.subheader("Data Pembayaran SPP")
-    st.table(filtered_data)
-    
-    # Pilihan untuk memilih siswa dari daftar
-    selected_siswa = st.selectbox("Pilih Siswa untuk Kwitansi", options=filtered_data["Nama Siswa"].unique())
-    selected_kelas = st.selectbox("Pilih Kelas", options=filtered_data["Kelas"].unique())
-    
-    # Filter data untuk siswa dan kelas yang dipilih
-    siswa_data = filtered_data[(filtered_data["Nama Siswa"] == selected_siswa) & (filtered_data["Kelas"] == selected_kelas)]
-    
-    # Tombol untuk download kwitansi siswa yang dipilih
-    if not siswa_data.empty:
-        siswa_row = siswa_data.iloc[0]  # Ambil baris pertama
-        pdf = generate_receipt(siswa_row["Nama Siswa"], siswa_row["Kelas"], siswa_row["Bulan"], siswa_row["Jumlah Pembayaran"], siswa_row["Biaya SPP/Bulan"])
-        
-        pdf_output = BytesIO()
-        pdf.output(pdf_output)
-        pdf_output.seek(0)
-        st.download_button(
-            label="Download Kwitansi Siswa",
-            data=pdf_output,
-            file_name=f"Kwitansi_SPP_{siswa_row['Nama Siswa']}_{siswa_row['Bulan']}.pdf",
-            mime="application/pdf"
-        )
-    else:
-        st.warning("Tidak ada data yang sesuai untuk kwitansi.")
+    # Tampilkan data yang sudah difilter
+    st.dataframe(filtered_data)
         
 elif selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
