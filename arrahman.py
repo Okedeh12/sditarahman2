@@ -6,17 +6,13 @@ from io import BytesIO
 from fpdf import FPDF
 import streamlit as st
 from streamlit_option_menu import option_menu
-import matplotlib.pyplot as plt
 
 # Define the temporary directory for Streamlit
 TEMP_DIR = '/tmp'
 
 def get_db_connection():
     """Create a connection to the SQLite database."""
-    # Define the database path
     DB_PATH = os.path.join(TEMP_DIR, 'database_sekolah.db')
-    
-    # Connect to the SQLite database
     return sqlite3.connect(DB_PATH)
 
 def create_tables():
@@ -186,6 +182,8 @@ if selected == "Pembayaran SPP":
         if submit_button:
             save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             st.success("Pembayaran SPP berhasil disimpan.")
+            
+            # Update the session state dataframe
             st.session_state.pembayaran_spp = st.session_state.pembayaran_spp.append({
                 "Nama Siswa": nama_siswa,
                 "Kelas": kelas,
@@ -197,7 +195,8 @@ if selected == "Pembayaran SPP":
                 "Sisa Tagihan yang Belum Terbayar": (biaya_spp * 12) - jumlah
             }, ignore_index=True)
             st.session_state.pembayaran_spp.to_csv(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'), index=False)
-            # Download the receipt
+            
+            # Generate and download receipt
             pdf_output = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             st.download_button("Download Kwitansi", pdf_output, file_name="kwitansi.pdf", mime="application/pdf")
 
@@ -240,3 +239,6 @@ elif selected == "Pengelolaan Gaji Guru":
         if submit_button:
             save_gaji_guru(nama_guru, bulan, gaji, tunjangan)
             st.success("Gaji guru berhasil disimpan.")
+            
+            # Update the session state dataframe (if needed)
+            # You can add functionality to display or download CSV as needed
