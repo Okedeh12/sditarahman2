@@ -1,7 +1,5 @@
 streamlit
 pandas
 matplotlib
-sqlite3
 fpdf
 streamlit-option-menu
-
