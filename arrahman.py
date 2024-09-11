@@ -106,7 +106,13 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     pdf.cell(200, 10, txt=f"Jumlah Pembayaran: Rp {jumlah}", ln=True)
     pdf.cell(200, 10, txt=f"Biaya SPP per Bulan: Rp {biaya_spp}", ln=True)
     pdf.cell(200, 10, txt=f"Tanggal: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
-    return pdf
+    
+    # Save to a BytesIO object
+    pdf_output = BytesIO()
+    pdf.output(pdf_output, 'F')
+    pdf_output.seek(0)  # Move to the start of the BytesIO object
+
+    return pdf_output
 
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
     """Save teacher salary details to SQLite and CSV."""
@@ -169,10 +175,7 @@ if selected == "Pembayaran SPP":
             save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             st.success(f"Pembayaran SPP untuk {nama_siswa} berhasil ditambahkan!")
             
-            pdf = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
-            pdf_output = BytesIO()
-            pdf.output(pdf_output)
-            pdf_output.seek(0)
+            pdf_output = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             st.download_button(
                 label="Download Kwitansi",
                 data=pdf_output,
@@ -186,10 +189,7 @@ if selected == "Pembayaran SPP":
 
     # Filter data based on search
     if "pembayaran_spp" not in st.session_state:
-        if os.path.exists('pembayaran_spp.csv'):
-            st.session_state.pembayaran_spp = pd.read_csv('pembayaran_spp.csv')
-        else:
-            st.session_state.pembayaran_spp = pd.DataFrame()
+        st.session_state.pembayaran_spp = pd.read_csv('pembayaran_spp.csv') if os.path.exists('pembayaran_spp.csv') else pd.DataFrame()
     filtered_data = st.session_state.pembayaran_spp
     if search_nama:
         filtered_data = filtered_data[filtered_data["Nama Siswa"].str.contains(search_nama, case=False, na=False)]
@@ -207,15 +207,11 @@ elif selected == "Laporan Keuangan":
         df_spp = pd.read_csv('pembayaran_spp.csv')
         st.write("Laporan Pembayaran SPP:")
         st.write(df_spp)
-    else:
-        st.write("File pembayaran_spp.csv tidak ditemukan.")
     
     if os.path.exists('gaji_guru.csv'):
         df_gaji = pd.read_csv('gaji_guru.csv')
         st.write("Laporan Gaji Guru:")
         st.write(df_gaji)
-    else:
-        st.write("File gaji_guru.csv tidak ditemukan.")
     
     # Visualization
     st.subheader("Grafik Pembayaran SPP")
@@ -228,8 +224,6 @@ elif selected == "Laporan Keuangan":
         plt.xlabel('Bulan')
         plt.ylabel('Jumlah Pembayaran (Rp)')
         st.pyplot(plt)
-    else:
-        st.write("File pembayaran_spp.csv tidak ditemukan.")
 
 elif selected == "Pengelolaan Gaji Guru":
     st.title("Pengelolaan Gaji Guru")
@@ -251,5 +245,3 @@ elif selected == "Pengelolaan Gaji Guru":
     if os.path.exists('gaji_guru.csv'):
         df_gaji = pd.read_csv('gaji_guru.csv')
         st.write(df_gaji)
-    else:
-        st.write("File gaji_guru.csv tidak ditemukan.")
