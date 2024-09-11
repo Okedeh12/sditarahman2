@@ -9,7 +9,7 @@ from io import BytesIO
 from fpdf import FPDF
 
 # Define the database path
-DB_DIR = '/mnt/data'
+DB_DIR = '/app'
 DB_PATH = os.path.join(DB_DIR, 'database_sekolah.db')
 
 def get_db_connection():
@@ -176,7 +176,7 @@ if selected == "Pembayaran SPP":
         st.download_button(
             label="Download Kwitansi",
             data=pdf_output,
-            file_name=f"Kwitansi_SPP_{selected_siswa}.pdf",
+            file_name=f"Kwitansi_SPP_{selected_siswa}_{selected_kelas}.pdf",
             mime="application/pdf"
         )
 
