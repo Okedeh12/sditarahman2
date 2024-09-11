@@ -4,13 +4,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sqlite3
 import os
-import stat
 from datetime import datetime
 from io import BytesIO
 from fpdf import FPDF
 
 # Define the database path
-DB_PATH = 'path/to/your/database_sekolah.db'
+DB_PATH = '/mnt/data/database_sekolah.db'
 
 def get_db_connection():
     return sqlite3.connect(DB_PATH)
@@ -43,14 +42,6 @@ def create_tables():
     conn.commit()
     conn.close()
 
-# Check if the file exists, create it if necessary, and set permissions
-if not os.path.exists(DB_PATH):
-    # Create an empty file if it does not exist
-    open(DB_PATH, 'w').close()
-    # Set permissions: read and write for the owner
-    os.chmod(DB_PATH, stat.S_IRUSR | stat.S_IWUSR)
-    print(f"Database file created: {DB_PATH}")
-
 # Initialize the database and create tables
 create_tables()
 
@@ -75,7 +66,7 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
         "Biaya SPP/Bulan": [biaya_spp]
     })
     st.session_state.pembayaran_spp = pd.concat([st.session_state.pembayaran_spp, new_row], ignore_index=True)
-    st.session_state.pembayaran_spp.to_csv('pembayaran_spp.csv', index=False)
+    st.session_state.pembayaran_spp.to_csv('/mnt/data/pembayaran_spp.csv', index=False)
 
 # Function to save teacher salary to SQLite
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
