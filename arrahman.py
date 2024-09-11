@@ -1,32 +1,3 @@
-import sqlite3
-import os
-import streamlit as st
-
-def get_db_connection():
-    """Create a connection to the SQLite database in a writable directory."""
-    temp_dir = st.runtime.get_runtime().temp_directory
-    db_path = os.path.join(temp_dir, 'database_sekolah.db')
-    
-    # Connect to the SQLite database
-    return sqlite3.connect(db_path)
-What this does:
-The database file is now stored in a temporary directory that Streamlit allows write access to.
-The temporary directory will persist only during the app's runtime and will be reset each time the app is restarted. If you need long-term persistence, you might want to explore cloud-based storage solutions or use a service like Google Drive, AWS S3, etc.
-Now, replace your existing get_db_connection function with the one above, and your app should work without encountering the permission error.
-
-
-
-
-
-
-Anda bilang:
-JADIKAN SATU
-ChatGPT bilang:
-ChatGPT
-Berikut adalah kode lengkap yang sudah digabungkan, menggunakan direktori sementara dari Streamlit untuk mengatasi masalah PermissionError saat menulis ke database:
-
-python
-Salin kode
 import os
 import sqlite3
 import pandas as pd
