@@ -181,7 +181,7 @@ if selected == "Pembayaran SPP":
         submitted = st.form_submit_button("Bayar")
         
         if submitted:
-            save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+            save_pembayaran_spp(conn, nama_siswa, kelas, bulan, jumlah, biaya_spp)
             st.success(f"Pembayaran SPP untuk {nama_siswa} berhasil ditambahkan!")
     
             # Generate PDF receipt
