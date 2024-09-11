@@ -162,6 +162,7 @@ if selected == "Pembayaran SPP":
     st.title("Pembayaran SPP")
     st.write("Halaman untuk pembayaran SPP siswa.")
     
+   # Simulasi input data pembayaran SPP menggunakan form
     with st.form("pembayaran_form"):
         nama_siswa = st.text_input("Nama Siswa")
         kelas = st.selectbox("Kelas", ["Kelas 1", "Kelas 2", "Kelas 3", "Kelas 4", "Kelas 5", "Kelas 6"])
@@ -169,13 +170,20 @@ if selected == "Pembayaran SPP":
         biaya_spp = st.number_input("Biaya SPP per Bulan (Rp)", min_value=0)
         jumlah = st.number_input("Jumlah Pembayaran (Rp)", min_value=0)
         
+        # Tombol submit
         submitted = st.form_submit_button("Bayar")
         
         if submitted:
             save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             st.success(f"Pembayaran SPP untuk {nama_siswa} berhasil ditambahkan!")
             
-            pdf_output = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+            # Generate PDF receipt
+            pdf = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+            
+            # Button to download PDF receipt
+            pdf_output = BytesIO()
+            pdf.output(pdf_output)
+            pdf_output.seek(0)
             st.download_button(
                 label="Download Kwitansi",
                 data=pdf_output,
@@ -183,21 +191,50 @@ if selected == "Pembayaran SPP":
                 mime="application/pdf"
             )
 
+    # Pencarian Nama Siswa dan Kelas
     st.subheader("Pencarian")
     search_nama = st.text_input("Cari Nama Siswa")
     search_kelas = st.selectbox("Cari Kelas", ["Semua"] + ["Kelas 1", "Kelas 2", "Kelas 3", "Kelas 4", "Kelas 5", "Kelas 6"])
 
-    # Filter data based on search
-    if "pembayaran_spp" not in st.session_state:
-        st.session_state.pembayaran_spp = pd.read_csv('pembayaran_spp.csv') if os.path.exists('pembayaran_spp.csv') else pd.DataFrame()
+    # Filter data berdasarkan pencarian
     filtered_data = st.session_state.pembayaran_spp
     if search_nama:
-        filtered_data = filtered_data[filtered_data["Nama Siswa"].str.contains(search_nama, case=False, na=False)]
+        filtered_data = filtered_data[filtered_data["Nama Siswa"].str.contains(search_nama, case=False)]
     if search_kelas != "Semua":
         filtered_data = filtered_data[filtered_data["Kelas"] == search_kelas]
-    
-    st.write(filtered_data)
 
+    # Adding columns for Total Tagihan, SPP Terbayar, and Sisa Tagihan
+    filtered_data['Total Tagihan SPP 1 Tahun (Rp)'] = filtered_data['Biaya SPP/Bulan'] * 12
+    filtered_data['SPP yang Sudah Terbayar (Rp)'] = filtered_data.groupby(['Nama Siswa', 'Kelas'])['Jumlah Pembayaran'].transform('sum')
+    filtered_data['Sisa Tagihan SPP (Rp)'] = filtered_data['Total Tagihan SPP 1 Tahun (Rp)'] - filtered_data['SPP yang Sudah Terbayar (Rp)']
+
+    # Tampilkan data pembayaran SPP
+    st.subheader("Data Pembayaran SPP")
+    st.table(filtered_data)
+
+    # Pilihan untuk memilih siswa dari daftar
+    selected_siswa = st.selectbox("Pilih Siswa untuk Kwitansi", options=filtered_data["Nama Siswa"].unique())
+    selected_kelas = st.selectbox("Pilih Kelas", options=filtered_data["Kelas"].unique())
+
+    # Filter data untuk siswa dan kelas yang dipilih
+    siswa_data = filtered_data[(filtered_data["Nama Siswa"] == selected_siswa) & (filtered_data["Kelas"] == selected_kelas)]
+
+    # Tombol untuk download kwitansi siswa yang dipilih
+    if not siswa_data.empty:
+        siswa_row = siswa_data.iloc[0]  # Ambil baris pertama
+        pdf = generate_receipt(siswa_row["Nama Siswa"], siswa_row["Kelas"], siswa_row["Bulan"], siswa_row["Jumlah Pembayaran"], siswa_row["Biaya SPP/Bulan"])
+        
+        pdf_output = BytesIO()
+        pdf.output(pdf_output)
+        pdf_output.seek(0)
+        st.download_button(
+            label="Download Kwitansi Siswa",
+            data=pdf_output,
+            file_name=f"Kwitansi_SPP_{siswa_row['Nama Siswa']}_{siswa_row['Bulan']}.pdf",
+            mime="application/pdf"
+        )
+    else:
+        st.warning("Tidak ada data yang sesuai untuk kwitansi.")
 elif selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
     st.write("Halaman untuk laporan keuangan.")
