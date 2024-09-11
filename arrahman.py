@@ -6,11 +6,12 @@ from io import BytesIO
 from fpdf import FPDF
 import streamlit as st
 from streamlit_option_menu import option_menu
+import tempfile
 
 # Define the function to get a database connection
 def get_db_connection():
     """Create a connection to the SQLite database in a writable directory."""
-    temp_dir = st.runtime.get_runtime().temp_directory
+    temp_dir = tempfile.gettempdir()  # Use Python's tempfile module for a temporary directory
     db_path = os.path.join(temp_dir, 'database_sekolah.db')
     
     # Connect to the SQLite database
@@ -194,60 +195,51 @@ if selected == "Pembayaran SPP":
     search_nama = st.text_input("Cari Nama Siswa")
     search_kelas = st.selectbox("Cari Kelas", ["Semua"] + ["Kelas 1", "Kelas 2", "Kelas 3", "Kelas 4", "Kelas 5", "Kelas 6"])
     
-    # Filter data berdasarkan pencarian
-    filtered_data = st.session_state.pembayaran_spp.copy()
+    filtered_data = st.session_state.pembayaran_spp
     if search_nama:
         filtered_data = filtered_data[filtered_data["Nama Siswa"].str.contains(search_nama, case=False)]
     if search_kelas != "Semua":
         filtered_data = filtered_data[filtered_data["Kelas"] == search_kelas]
     
-    # Tampilkan tabel hasil pencarian
     st.write(filtered_data)
-        
+
 elif selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
-    st.write("Halaman untuk laporan keuangan.")
+    st.write("Laporan keuangan sekolah yang berisi rincian pembayaran SPP dan gaji guru.")
+
+    # Load data pembayaran SPP
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('SELECT * FROM pembayaran_spp')
+    data_spp = c.fetchall()
+    conn.close()
     
-    # Load and display financial data
-    if os.path.exists('pembayaran_spp.csv'):
-        df_spp = pd.read_csv('pembayaran_spp.csv')
-        st.write("Laporan Pembayaran SPP:")
-        st.write(df_spp)
+    df_spp = pd.DataFrame(data_spp, columns=["ID", "Nama Siswa", "Kelas", "Bulan", "Jumlah Pembayaran", "Tanggal"])
     
-    if os.path.exists('gaji_guru.csv'):
-        df_gaji = pd.read_csv('gaji_guru.csv')
-        st.write("Laporan Gaji Guru:")
-        st.write(df_gaji)
+    st.subheader("Laporan Pembayaran SPP")
+    st.write(df_spp)
     
-    # Visualization
-    st.subheader("Grafik Pembayaran SPP")
-    if os.path.exists('pembayaran_spp.csv'):
-        df_spp = pd.read_csv('pembayaran_spp.csv')
-        df_spp_grouped = df_spp.groupby('Bulan')['Jumlah Pembayaran'].sum()
-        plt.figure(figsize=(10, 6))
-        df_spp_grouped.plot(kind='bar')
-        plt.title('Total Pembayaran SPP per Bulan')
-        plt.xlabel('Bulan')
-        plt.ylabel('Jumlah Pembayaran (Rp)')
-        st.pyplot(plt)
+    # Download laporan SPP sebagai CSV
+    st.download_button(
+        label="Download Laporan SPP (CSV)",
+        data=df_spp.to_csv(index=False),
+        file_name="laporan_spp.csv",
+        mime="text/csv"
+    )
 
 elif selected == "Pengelolaan Gaji Guru":
     st.title("Pengelolaan Gaji Guru")
     st.write("Halaman untuk pengelolaan gaji guru.")
-
+    
+    # Input data gaji guru
     with st.form("gaji_form"):
         nama_guru = st.text_input("Nama Guru")
         bulan_gaji = st.selectbox("Bulan", ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"])
-        gaji = st.number_input("Gaji Pokok (Rp)", min_value=0)
+        gaji_pokok = st.number_input("Gaji Pokok (Rp)", min_value=0)
         tunjangan = st.number_input("Tunjangan (Rp)", min_value=0)
         
         submitted = st.form_submit_button("Simpan")
         
         if submitted:
-            save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan)
-            st.success(f"Data gaji untuk {nama_guru} berhasil disimpan!")
-
-    st.subheader("Laporan Gaji Guru")
-    if os.path.exists('gaji_guru.csv'):
-        df_gaji = pd.read_csv('gaji_guru.csv')
-        st.write(df_gaji)
+            save_gaji_guru(nama_guru, bulan_gaji, gaji_pokok, tunjangan)
+            st.success(f"Gaji untuk {nama_guru} berhasil disimpan!")
