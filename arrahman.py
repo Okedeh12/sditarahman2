@@ -162,7 +162,14 @@ if selected == "Pembayaran SPP":
     st.title("Pembayaran SPP")
     st.write("Halaman untuk pembayaran SPP siswa.")
     
-   # Simulasi input data pembayaran SPP menggunakan form
+    # Cek apakah data pembayaran sudah ada di session state, jika belum ambil dari database
+    if 'pembayaran_spp' not in st.session_state:
+        c.execute('SELECT * FROM pembayaran_spp')
+        data_spp = c.fetchall()
+        df_spp = pd.DataFrame(data_spp, columns=["ID", "Nama Siswa", "Kelas", "Bulan", "Biaya SPP/Bulan", "Jumlah Pembayaran", "Tanggal"])
+        st.session_state.pembayaran_spp = df_spp
+    
+    # Simulasi input data pembayaran SPP menggunakan form
     with st.form("pembayaran_form"):
         nama_siswa = st.text_input("Nama Siswa")
         kelas = st.selectbox("Kelas", ["Kelas 1", "Kelas 2", "Kelas 3", "Kelas 4", "Kelas 5", "Kelas 6"])
@@ -176,7 +183,7 @@ if selected == "Pembayaran SPP":
         if submitted:
             save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             st.success(f"Pembayaran SPP untuk {nama_siswa} berhasil ditambahkan!")
-            
+    
             # Generate PDF receipt
             pdf = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             
@@ -190,35 +197,35 @@ if selected == "Pembayaran SPP":
                 file_name=f"Kwitansi_SPP_{nama_siswa}_{bulan}.pdf",
                 mime="application/pdf"
             )
-
+    
     # Pencarian Nama Siswa dan Kelas
     st.subheader("Pencarian")
     search_nama = st.text_input("Cari Nama Siswa")
     search_kelas = st.selectbox("Cari Kelas", ["Semua"] + ["Kelas 1", "Kelas 2", "Kelas 3", "Kelas 4", "Kelas 5", "Kelas 6"])
-
+    
     # Filter data berdasarkan pencarian
     filtered_data = st.session_state.pembayaran_spp
     if search_nama:
         filtered_data = filtered_data[filtered_data["Nama Siswa"].str.contains(search_nama, case=False)]
     if search_kelas != "Semua":
         filtered_data = filtered_data[filtered_data["Kelas"] == search_kelas]
-
+    
     # Adding columns for Total Tagihan, SPP Terbayar, and Sisa Tagihan
     filtered_data['Total Tagihan SPP 1 Tahun (Rp)'] = filtered_data['Biaya SPP/Bulan'] * 12
     filtered_data['SPP yang Sudah Terbayar (Rp)'] = filtered_data.groupby(['Nama Siswa', 'Kelas'])['Jumlah Pembayaran'].transform('sum')
     filtered_data['Sisa Tagihan SPP (Rp)'] = filtered_data['Total Tagihan SPP 1 Tahun (Rp)'] - filtered_data['SPP yang Sudah Terbayar (Rp)']
-
+    
     # Tampilkan data pembayaran SPP
     st.subheader("Data Pembayaran SPP")
     st.table(filtered_data)
-
+    
     # Pilihan untuk memilih siswa dari daftar
     selected_siswa = st.selectbox("Pilih Siswa untuk Kwitansi", options=filtered_data["Nama Siswa"].unique())
     selected_kelas = st.selectbox("Pilih Kelas", options=filtered_data["Kelas"].unique())
-
+    
     # Filter data untuk siswa dan kelas yang dipilih
     siswa_data = filtered_data[(filtered_data["Nama Siswa"] == selected_siswa) & (filtered_data["Kelas"] == selected_kelas)]
-
+    
     # Tombol untuk download kwitansi siswa yang dipilih
     if not siswa_data.empty:
         siswa_row = siswa_data.iloc[0]  # Ambil baris pertama
@@ -235,6 +242,7 @@ if selected == "Pembayaran SPP":
         )
     else:
         st.warning("Tidak ada data yang sesuai untuk kwitansi.")
+        
 elif selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
     st.write("Halaman untuk laporan keuangan.")
