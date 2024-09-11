@@ -195,7 +195,7 @@ if selected == "Pembayaran SPP":
     search_kelas = st.selectbox("Cari Kelas", ["Semua"] + ["Kelas 1", "Kelas 2", "Kelas 3", "Kelas 4", "Kelas 5", "Kelas 6"])
     
     # Filter data berdasarkan pencarian
-    filtered_data = st.session_state.pembayaran_spp
+    filtered_data = st.session_state.pembayaran_spp.copy()
     if search_nama:
         filtered_data = filtered_data[filtered_data["Nama Siswa"].str.contains(search_nama, case=False)]
     if search_kelas != "Semua":
