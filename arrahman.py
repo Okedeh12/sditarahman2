@@ -186,7 +186,10 @@ if selected == "Pembayaran SPP":
 
     # Filter data based on search
     if "pembayaran_spp" not in st.session_state:
-        st.session_state.pembayaran_spp = pd.read_csv('pembayaran_spp.csv') if os.path.exists('pembayaran_spp.csv') else pd.DataFrame()
+        if os.path.exists('pembayaran_spp.csv'):
+            st.session_state.pembayaran_spp = pd.read_csv('pembayaran_spp.csv')
+        else:
+            st.session_state.pembayaran_spp = pd.DataFrame()
     filtered_data = st.session_state.pembayaran_spp
     if search_nama:
         filtered_data = filtered_data[filtered_data["Nama Siswa"].str.contains(search_nama, case=False, na=False)]
@@ -204,11 +207,15 @@ elif selected == "Laporan Keuangan":
         df_spp = pd.read_csv('pembayaran_spp.csv')
         st.write("Laporan Pembayaran SPP:")
         st.write(df_spp)
+    else:
+        st.write("File pembayaran_spp.csv tidak ditemukan.")
     
     if os.path.exists('gaji_guru.csv'):
         df_gaji = pd.read_csv('gaji_guru.csv')
         st.write("Laporan Gaji Guru:")
         st.write(df_gaji)
+    else:
+        st.write("File gaji_guru.csv tidak ditemukan.")
     
     # Visualization
     st.subheader("Grafik Pembayaran SPP")
@@ -221,6 +228,8 @@ elif selected == "Laporan Keuangan":
         plt.xlabel('Bulan')
         plt.ylabel('Jumlah Pembayaran (Rp)')
         st.pyplot(plt)
+    else:
+        st.write("File pembayaran_spp.csv tidak ditemukan.")
 
 elif selected == "Pengelolaan Gaji Guru":
     st.title("Pengelolaan Gaji Guru")
@@ -242,3 +251,5 @@ elif selected == "Pengelolaan Gaji Guru":
     if os.path.exists('gaji_guru.csv'):
         df_gaji = pd.read_csv('gaji_guru.csv')
         st.write(df_gaji)
+    else:
+        st.write("File gaji_guru.csv tidak ditemukan.")
