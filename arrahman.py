@@ -71,7 +71,7 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     st.session_state.pembayaran_spp = pd.concat([st.session_state.pembayaran_spp, new_row], ignore_index=True)
     st.session_state.pembayaran_spp.to_csv(os.path.join(DB_DIR, 'pembayaran_spp.csv'), index=False)
 
-# Function to save teacher salary to SQLite
+# Function to save teacher salary to SQLite and CSV
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
     tanggal = datetime.now().strftime('%Y-%m-%d')
     conn = get_db_connection()
@@ -80,6 +80,18 @@ def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
               (nama_guru, bulan, gaji, tunjangan, tanggal))
     conn.commit()
     conn.close()
+    
+    # Save to CSV
+    if "gaji_guru" not in st.session_state:
+        st.session_state.gaji_guru = pd.DataFrame(columns=["Nama Guru", "Bulan", "Gaji", "Tunjangan"])
+    new_row = pd.DataFrame({
+        "Nama Guru": [nama_guru],
+        "Bulan": [bulan],
+        "Gaji": [gaji],
+        "Tunjangan": [tunjangan]
+    })
+    st.session_state.gaji_guru = pd.concat([st.session_state.gaji_guru, new_row], ignore_index=True)
+    st.session_state.gaji_guru.to_csv(os.path.join(DB_DIR, 'gaji_guru.csv'), index=False)
 
 # Function to generate a payment receipt as a PDF
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
@@ -166,19 +178,19 @@ if selected == "Pembayaran SPP":
     selected_kelas = st.selectbox("Pilih Kelas", options=filtered_data["Kelas"].unique())
 
     siswa_data = filtered_data[(filtered_data["Nama Siswa"] == selected_siswa) & (filtered_data["Kelas"] == selected_kelas)]
-
     if not siswa_data.empty:
-        siswa_row = siswa_data.iloc[0]
-        pdf = generate_receipt(siswa_row["Nama Siswa"], siswa_row["Kelas"], siswa_row["Bulan"], siswa_row["Jumlah Pembayaran"], siswa_row["Biaya SPP/Bulan"])
-        pdf_output = BytesIO()
-        pdf.output(pdf_output)
-        pdf_output.seek(0)
-        st.download_button(
-            label="Download Kwitansi",
-            data=pdf_output,
-            file_name=f"Kwitansi_SPP_{selected_siswa}_{selected_kelas}.pdf",
-            mime="application/pdf"
-        )
+        st.write(siswa_data)
+        if st.button("Download Kwitansi"):
+            pdf = generate_receipt(selected_siswa, selected_kelas, siswa_data["Bulan"].values[0], siswa_data["Jumlah Pembayaran"].values[0], siswa_data["Biaya SPP/Bulan"].values[0])
+            pdf_output = BytesIO()
+            pdf.output(pdf_output)
+            pdf_output.seek(0)
+            st.download_button(
+                label="Download Kwitansi",
+                data=pdf_output,
+                file_name=f"Kwitansi_SPP_{selected_siswa}_{selected_kelas}.pdf",
+                mime="application/pdf"
+            )
 
 elif selected == "Pengelolaan Gaji Guru":
     st.title("Pengelolaan Gaji Guru")
@@ -229,3 +241,18 @@ elif selected == "Laporan Keuangan":
         df_gaji['tunjangan'] = pd.to_numeric(df_gaji['tunjangan'], errors='coerce')
         df_gaji.groupby(['bulan']).agg({'gaji': 'sum', 'tunjangan': 'sum'}).plot(kind='bar', title='Gaji Guru per Bulan')
         st.pyplot(plt.gcf())
+
+    # Download CSV files
+    st.subheader("Unduh Data")
+    st.download_button(
+        label="Download Data Pembayaran SPP",
+        data=open(os.path.join(DB_DIR, 'pembayaran_spp.csv'), 'rb').read(),
+        file_name="pembayaran_spp.csv",
+        mime="text/csv"
+    )
+    st.download_button(
+        label="Download Data Gaji Guru",
+        data=open(os.path.join(DB_DIR, 'gaji_guru.csv'), 'rb').read(),
+        file_name="gaji_guru.csv",
+        mime="text/csv"
+    )
