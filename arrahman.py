@@ -8,6 +8,41 @@ from datetime import datetime
 from io import BytesIO
 from fpdf import FPDF
 
+import os
+if not os.path.exists(DB_PATH):
+    st.error(f"Database file does not exist: {DB_PATH}")
+    
+chmod 644 path/to/your/database_sekolah.db
+
+def create_tables():
+    conn = get_db_connection()
+    c = conn.cursor()
+    # Create tables
+    c.execute('''CREATE TABLE IF NOT EXISTS students (
+                     id INTEGER PRIMARY KEY,
+                     name TEXT,
+                     age INTEGER
+                )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS pembayaran_spp (
+                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     nama_siswa TEXT,
+                     kelas TEXT,
+                     bulan TEXT,
+                     jumlah INTEGER,
+                     tanggal TEXT
+                )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS gaji_guru (
+                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     nama_guru TEXT,
+                     bulan TEXT,
+                     gaji INTEGER,
+                     tunjangan INTEGER,
+                     tanggal TEXT
+                )''')
+    conn.commit()
+    conn.close()
+
+
 DB_PATH = 'path/to/your/database_sekolah.db'
 def get_db_connection():
     try:
