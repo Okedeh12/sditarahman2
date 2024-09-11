@@ -6,18 +6,19 @@ from io import BytesIO
 from fpdf import FPDF
 import streamlit as st
 from streamlit_option_menu import option_menu
-import tempfile
+import matplotlib.pyplot as plt
 
-# Define the function to get a database connection
+# Define the temporary directory for Streamlit
+TEMP_DIR = '/tmp'
+
 def get_db_connection():
-    """Create a connection to the SQLite database in a writable directory."""
-    temp_dir = tempfile.gettempdir()  # Use Python's tempfile module for a temporary directory
-    db_path = os.path.join(temp_dir, 'database_sekolah.db')
+    """Create a connection to the SQLite database."""
+    # Define the database path
+    DB_PATH = os.path.join(TEMP_DIR, 'database_sekolah.db')
     
     # Connect to the SQLite database
-    return sqlite3.connect(db_path)
+    return sqlite3.connect(DB_PATH)
 
-# Function to create tables
 def create_tables():
     """Create the required tables in the SQLite database."""
     conn = None
@@ -36,6 +37,9 @@ def create_tables():
                          kelas TEXT,
                          bulan TEXT,
                          jumlah INTEGER,
+                         total_tagihan_tahun INTEGER DEFAULT 0,
+                         tagihan_sudah_terbayar INTEGER DEFAULT 0,
+                         sisa_tagihan_belum_terbayar INTEGER DEFAULT 0,
                          tanggal TEXT
                     )''')
         c.execute('''CREATE TABLE IF NOT EXISTS gaji_guru (
@@ -55,36 +59,43 @@ def create_tables():
         if conn:
             conn.close()
 
-# Function to save SPP payment
 def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Save SPP payment details to SQLite and CSV."""
     try:
         conn = get_db_connection()
         c = conn.cursor()
+
+        # Calculate the total yearly fee and update other fields
+        total_tagihan_tahun = biaya_spp * 12
+        tagihan_sudah_terbayar = jumlah
+        sisa_tagihan_belum_terbayar = total_tagihan_tahun - tagihan_sudah_terbayar
+        
         # Save to SQLite
-        c.execute("INSERT INTO pembayaran_spp (nama_siswa, kelas, bulan, jumlah, tanggal) VALUES (?, ?, ?, ?, ?)",
-                  (nama_siswa, kelas, bulan, jumlah, datetime.now().strftime('%Y-%m-%d')))
+        c.execute("INSERT INTO pembayaran_spp (nama_siswa, kelas, bulan, jumlah, total_tagihan_tahun, tagihan_sudah_terbayar, sisa_tagihan_belum_terbayar, tanggal) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ",
+                  (nama_siswa, kelas, bulan, jumlah, total_tagihan_tahun, tagihan_sudah_terbayar, sisa_tagihan_belum_terbayar, datetime.now().strftime('%Y-%m-%d')))
         conn.commit()
         conn.close()
         
         # Save to CSV
         if "pembayaran_spp" not in st.session_state:
-            st.session_state.pembayaran_spp = pd.DataFrame(columns=["Nama Siswa", "Kelas", "Bulan", "Jumlah Pembayaran", "Biaya SPP/Bulan"])
+            st.session_state.pembayaran_spp = pd.DataFrame(columns=["Nama Siswa", "Kelas", "Bulan", "Jumlah Pembayaran", "Biaya SPP/Bulan", "Total Tagihan SPP 1 Tahun", "Tagihan SPP yang Sudah Terbayar", "Sisa Tagihan yang Belum Terbayar"])
         new_row = pd.DataFrame({
             "Nama Siswa": [nama_siswa],
             "Kelas": [kelas],
             "Bulan": [bulan],
             "Jumlah Pembayaran": [jumlah],
-            "Biaya SPP/Bulan": [biaya_spp]
+            "Biaya SPP/Bulan": [biaya_spp],
+            "Total Tagihan SPP 1 Tahun": [total_tagihan_tahun],
+            "Tagihan SPP yang Sudah Terbayar": [tagihan_sudah_terbayar],
+            "Sisa Tagihan yang Belum Terbayar": [sisa_tagihan_belum_terbayar]
         })
         st.session_state.pembayaran_spp = pd.concat([st.session_state.pembayaran_spp, new_row], ignore_index=True)
-        st.session_state.pembayaran_spp.to_csv('pembayaran_spp.csv', index=False)
+        st.session_state.pembayaran_spp.to_csv(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'), index=False)
     except sqlite3.OperationalError as e:
         print(f"SQLite OperationalError: {e}")
     except Exception as e:
         print(f"Error saving pembayaran SPP: {e}")
 
-# Function to generate PDF receipt
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a payment receipt as a PDF."""
     pdf = FPDF()
@@ -105,7 +116,6 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
 
     return pdf_output
 
-# Function to save teacher salary details
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
     """Save teacher salary details to SQLite and CSV."""
     try:
@@ -125,7 +135,7 @@ def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
             'Tunjangan': tunjangan,
             'Tanggal': datetime.now().strftime('%Y-%m-%d')
         }])
-        df_gaji.to_csv('gaji_guru.csv', mode='a', header=not os.path.exists('gaji_guru.csv'), index=False)
+        df_gaji.to_csv(os.path.join(TEMP_DIR, 'gaji_guru.csv'), mode='a', header=not os.path.exists(os.path.join(TEMP_DIR, 'gaji_guru.csv')), index=False)
     except sqlite3.OperationalError as e:
         print(f"SQLite OperationalError: {e}")
     except Exception as e:
@@ -160,65 +170,53 @@ if selected == "Pembayaran SPP":
         c = conn.cursor()
         c.execute('SELECT * FROM pembayaran_spp')
         data_spp = c.fetchall()
-        df_spp = pd.DataFrame(data_spp, columns=["ID", "Nama Siswa", "Kelas", "Bulan", "Jumlah Pembayaran", "Tanggal"])
-        st.session_state.pembayaran_spp = df_spp
         conn.close()
+        df_spp = pd.DataFrame(data_spp, columns=["ID", "Nama Siswa", "Kelas", "Bulan", "Jumlah Pembayaran", "Total Tagihan SPP 1 Tahun", "Tagihan SPP yang Sudah Terbayar", "Sisa Tagihan yang Belum Terbayar", "Tanggal"])
+        st.session_state.pembayaran_spp = df_spp
     
     # Simulasi input data pembayaran SPP menggunakan form
     with st.form("pembayaran_form"):
         nama_siswa = st.text_input("Nama Siswa")
         kelas = st.selectbox("Kelas", ["Kelas 1", "Kelas 2", "Kelas 3", "Kelas 4", "Kelas 5", "Kelas 6"])
         bulan = st.selectbox("Bulan", ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"])
-        biaya_spp = st.number_input("Biaya SPP per Bulan (Rp)", min_value=0)
-        jumlah = st.number_input("Jumlah Pembayaran (Rp)", min_value=0)
+        jumlah = st.number_input("Jumlah Pembayaran", min_value=0)
+        biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0)
         
-        # Tombol submit
-        submitted = st.form_submit_button("Bayar")
-        
-        if submitted:
+        submit_button = st.form_submit_button("Simpan")
+        if submit_button:
             save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
-            st.success(f"Pembayaran SPP untuk {nama_siswa} berhasil ditambahkan!")
-    
-            # Generate PDF receipt
-            pdf = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
-            
-            # Button to download PDF receipt
-            st.download_button(
-                label="Download Kwitansi",
-                data=pdf,
-                file_name=f"Kwitansi_SPP_{nama_siswa}_{bulan}.pdf",
-                mime="application/pdf"
-            )
-    
-    # Pencarian Nama Siswa dan Kelas
-    st.subheader("Pencarian")
-    search_nama = st.text_input("Cari Nama Siswa")
-    search_kelas = st.selectbox("Cari Kelas", ["Semua"] + ["Kelas 1", "Kelas 2", "Kelas 3", "Kelas 4", "Kelas 5", "Kelas 6"])
-    
-    filtered_data = st.session_state.pembayaran_spp
-    if search_nama:
-        filtered_data = filtered_data[filtered_data["Nama Siswa"].str.contains(search_nama, case=False)]
-    if search_kelas != "Semua":
-        filtered_data = filtered_data[filtered_data["Kelas"] == search_kelas]
-    
-    st.write(filtered_data)
+            st.success("Pembayaran SPP berhasil disimpan.")
+            st.session_state.pembayaran_spp = st.session_state.pembayaran_spp.append({
+                "Nama Siswa": nama_siswa,
+                "Kelas": kelas,
+                "Bulan": bulan,
+                "Jumlah Pembayaran": jumlah,
+                "Biaya SPP/Bulan": biaya_spp,
+                "Total Tagihan SPP 1 Tahun": biaya_spp * 12,
+                "Tagihan SPP yang Sudah Terbayar": jumlah,
+                "Sisa Tagihan yang Belum Terbayar": (biaya_spp * 12) - jumlah
+            }, ignore_index=True)
+            st.session_state.pembayaran_spp.to_csv(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'), index=False)
+            # Download the receipt
+            pdf_output = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+            st.download_button("Download Kwitansi", pdf_output, file_name="kwitansi.pdf", mime="application/pdf")
 
 elif selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
     st.write("Laporan keuangan sekolah yang berisi rincian pembayaran SPP dan gaji guru.")
-
+    
     # Load data pembayaran SPP
     conn = get_db_connection()
     c = conn.cursor()
     c.execute('SELECT * FROM pembayaran_spp')
     data_spp = c.fetchall()
     conn.close()
-    
-    df_spp = pd.DataFrame(data_spp, columns=["ID", "Nama Siswa", "Kelas", "Bulan", "Jumlah Pembayaran", "Tanggal"])
-    
+
+    df_spp = pd.DataFrame(data_spp, columns=["ID", "Nama Siswa", "Kelas", "Bulan", "Jumlah Pembayaran", "Total Tagihan SPP 1 Tahun", "Tagihan SPP yang Sudah Terbayar", "Sisa Tagihan yang Belum Terbayar", "Tanggal"])
+
     st.subheader("Laporan Pembayaran SPP")
     st.write(df_spp)
-    
+
     # Download laporan SPP sebagai CSV
     st.download_button(
         label="Download Laporan SPP (CSV)",
@@ -231,15 +229,14 @@ elif selected == "Pengelolaan Gaji Guru":
     st.title("Pengelolaan Gaji Guru")
     st.write("Halaman untuk pengelolaan gaji guru.")
     
-    # Input data gaji guru
+    # Simulasi input data gaji guru menggunakan form
     with st.form("gaji_form"):
         nama_guru = st.text_input("Nama Guru")
-        bulan_gaji = st.selectbox("Bulan", ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"])
-        gaji_pokok = st.number_input("Gaji Pokok (Rp)", min_value=0)
-        tunjangan = st.number_input("Tunjangan (Rp)", min_value=0)
+        bulan = st.selectbox("Bulan", ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"])
+        gaji = st.number_input("Gaji Pokok", min_value=0)
+        tunjangan = st.number_input("Tunjangan", min_value=0)
         
-        submitted = st.form_submit_button("Simpan")
-        
-        if submitted:
-            save_gaji_guru(nama_guru, bulan_gaji, gaji_pokok, tunjangan)
-            st.success(f"Gaji untuk {nama_guru} berhasil disimpan!")
+        submit_button = st.form_submit_button("Simpan")
+        if submit_button:
+            save_gaji_guru(nama_guru, bulan, gaji, tunjangan)
+            st.success("Gaji guru berhasil disimpan.")
