@@ -8,6 +8,16 @@ from datetime import datetime
 from io import BytesIO
 from fpdf import FPDF
 
+DB_PATH = 'path/to/your/database_sekolah.db'
+def get_db_connection():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        return conn
+    except sqlite3.Error as e:
+        st.error(f"Failed to connect to the database: {e}")
+        raise
+
+
 # Define the path to the SQLite database
 DB_PATH = 'path/to/database_sekolah.db'
 
