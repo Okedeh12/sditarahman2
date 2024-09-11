@@ -1,3 +1,32 @@
+import sqlite3
+import os
+import streamlit as st
+
+def get_db_connection():
+    """Create a connection to the SQLite database in a writable directory."""
+    temp_dir = st.runtime.get_runtime().temp_directory
+    db_path = os.path.join(temp_dir, 'database_sekolah.db')
+    
+    # Connect to the SQLite database
+    return sqlite3.connect(db_path)
+What this does:
+The database file is now stored in a temporary directory that Streamlit allows write access to.
+The temporary directory will persist only during the app's runtime and will be reset each time the app is restarted. If you need long-term persistence, you might want to explore cloud-based storage solutions or use a service like Google Drive, AWS S3, etc.
+Now, replace your existing get_db_connection function with the one above, and your app should work without encountering the permission error.
+
+
+
+
+
+
+Anda bilang:
+JADIKAN SATU
+ChatGPT bilang:
+ChatGPT
+Berikut adalah kode lengkap yang sudah digabungkan, menggunakan direktori sementara dari Streamlit untuk mengatasi masalah PermissionError saat menulis ke database:
+
+python
+Salin kode
 import os
 import sqlite3
 import pandas as pd
@@ -6,29 +35,17 @@ from io import BytesIO
 from fpdf import FPDF
 import streamlit as st
 from streamlit_option_menu import option_menu
-import matplotlib.pyplot as plt
 
-# Define the database directory and path
-DB_DIR = '/app'
-DB_PATH = os.path.join(DB_DIR, 'database_sekolah.db')
-
+# Define the function to get a database connection
 def get_db_connection():
-    """Create a connection to the SQLite database."""
-    # Ensure the database directory exists
-    if not os.path.exists(DB_DIR):
-        print(f"Creating directory: {DB_DIR}")
-        try:
-            os.makedirs(DB_DIR, exist_ok=True)
-        except Exception as e:
-            print(f"Failed to create directory {DB_DIR}: {e}")
-            raise
-    # Check for write permissions
-    if not os.access(DB_DIR, os.W_OK):
-        print(f"No write access to directory: {DB_DIR}")
-        raise PermissionError(f"No write access to directory: {DB_DIR}")
+    """Create a connection to the SQLite database in a writable directory."""
+    temp_dir = st.runtime.get_runtime().temp_directory
+    db_path = os.path.join(temp_dir, 'database_sekolah.db')
+    
     # Connect to the SQLite database
-    return sqlite3.connect(DB_PATH)
+    return sqlite3.connect(db_path)
 
+# Function to create tables
 def create_tables():
     """Create the required tables in the SQLite database."""
     conn = None
@@ -66,6 +83,7 @@ def create_tables():
         if conn:
             conn.close()
 
+# Function to save SPP payment
 def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Save SPP payment details to SQLite and CSV."""
     try:
@@ -94,6 +112,7 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     except Exception as e:
         print(f"Error saving pembayaran SPP: {e}")
 
+# Function to generate PDF receipt
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a payment receipt as a PDF."""
     pdf = FPDF()
@@ -113,6 +132,32 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     pdf_output.seek(0)  # Move to the start of the BytesIO object
 
     return pdf_output
+
+# Function to save teacher salary details
+def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
+    """Save teacher salary details to SQLite and CSV."""
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        # Save to SQLite
+        c.execute('INSERT INTO gaji_guru (nama_guru, bulan, gaji, tunjangan, tanggal) VALUES (?, ?, ?, ?, ?)',
+                  (nama_guru, bulan, gaji, tunjangan, datetime.now().strftime('%Y-%m-%d')))
+        conn.commit()
+        conn.close()
+
+        # Save to CSV
+        df_gaji = pd.DataFrame([{
+            'Nama Guru': nama_guru,
+            'Bulan': bulan,
+            'Gaji Pokok': gaji,
+            'Tunjangan': tunjangan,
+            'Tanggal': datetime.now().strftime('%Y-%m-%d')
+        }])
+        df_gaji.to_csv('gaji_guru.csv', mode='a', header=not os.path.exists('gaji_guru.csv'), index=False)
+    except sqlite3.OperationalError as e:
+        print(f"SQLite OperationalError: {e}")
+    except Exception as e:
+        print(f"Error saving gaji guru: {e}")
 
 # Initialize the database and create tables
 create_tables()
@@ -139,13 +184,13 @@ if selected == "Pembayaran SPP":
     
     # Cek apakah data pembayaran sudah ada di session state, jika belum ambil dari database
     if 'pembayaran_spp' not in st.session_state:
-        conn = get_db_connection()  # Create a connection to the database
-        c = conn.cursor()           # Create a cursor object
+        conn = get_db_connection()
+        c = conn.cursor()
         c.execute('SELECT * FROM pembayaran_spp')
         data_spp = c.fetchall()
         df_spp = pd.DataFrame(data_spp, columns=["ID", "Nama Siswa", "Kelas", "Bulan", "Jumlah Pembayaran", "Tanggal"])
         st.session_state.pembayaran_spp = df_spp
-        conn.close()                # Close the connection after fetching the data
+        conn.close()
     
     # Simulasi input data pembayaran SPP menggunakan form
     with st.form("pembayaran_form"):
@@ -185,13 +230,8 @@ if selected == "Pembayaran SPP":
     if search_kelas != "Semua":
         filtered_data = filtered_data[filtered_data["Kelas"] == search_kelas]
     
-    # Adding columns for Total Tagihan, SPP Terbayar, and Sisa Tagihan
-    filtered_data['Total Tagihan SPP 1 Tahun (Rp)'] = filtered_data['Jumlah Pembayaran'] * 12
-    filtered_data['SPP yang Sudah Terbayar (Rp)'] = filtered_data.groupby(['Nama Siswa', 'Kelas'])['Jumlah Pembayaran'].transform('sum')
-    filtered_data['Sisa Tagihan SPP (Rp)'] = filtered_data['Total Tagihan SPP 1 Tahun (Rp)'] - filtered_data['SPP yang Sudah Terbayar (Rp)']
-    
-    # Tampilkan data yang sudah difilter
-    st.dataframe(filtered_data)
+    # Tampilkan tabel hasil pencarian
+    st.write(filtered_data)
         
 elif selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
