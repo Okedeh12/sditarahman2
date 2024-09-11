@@ -31,6 +31,7 @@ def get_db_connection():
 
 def create_tables():
     """Create the required tables in the SQLite database."""
+    conn = None
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -62,7 +63,8 @@ def create_tables():
     except Exception as e:
         print(f"Error creating tables: {e}")
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Save SPP payment details to SQLite and CSV."""
@@ -187,22 +189,22 @@ if selected == "Pembayaran SPP":
         st.session_state.pembayaran_spp = pd.read_csv('pembayaran_spp.csv') if os.path.exists('pembayaran_spp.csv') else pd.DataFrame()
     filtered_data = st.session_state.pembayaran_spp
     if search_nama:
-        filtered_data = filtered_data[filtered_data["Nama Siswa"].str.contains(search_nama, case=False)]
+        filtered_data = filtered_data[filtered_data["Nama Siswa"].str.contains(search_nama, case=False, na=False)]
     if search_kelas != "Semua":
         filtered_data = filtered_data[filtered_data["Kelas"] == search_kelas]
-
+    
     st.write(filtered_data)
 
 elif selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
     st.write("Halaman untuk laporan keuangan.")
-
+    
     # Load and display financial data
     if os.path.exists('pembayaran_spp.csv'):
         df_spp = pd.read_csv('pembayaran_spp.csv')
         st.write("Laporan Pembayaran SPP:")
         st.write(df_spp)
-        
+    
     if os.path.exists('gaji_guru.csv'):
         df_gaji = pd.read_csv('gaji_guru.csv')
         st.write("Laporan Gaji Guru:")
