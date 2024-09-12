@@ -144,26 +144,18 @@ def main():
 
     if selected == "Pembayaran SPP":
         st.title("Pembayaran SPP")
-        with st.form("spp_form"):
-            nama_siswa = st.text_input("Nama Siswa")
-            kelas = st.text_input("Kelas")
-            bulan = st.text_input("Bulan")
-            jumlah = st.number_input("Jumlah Pembayaran", min_value=0)
-            biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0)
-            submitted = st.form_submit_button("Simpan")
-
-            if submitted:
-                save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
-                st.success("Pembayaran SPP berhasil disimpan!")
-
         st.write(df_spp)
-        if not df_spp.empty:
-            spp_receipt = st.download_button(
-                label="Unduh Kwitansi SPP",
-                data=generate_receipt(nama_siswa, kelas, bulan, jumlah, 'spp'),
-                file_name="kwitansi_pembayaran_spp.pdf",
-                mime="application/pdf",
-            )
+        
+        selected_spp = st.multiselect("Pilih data SPP untuk diunduh kwitansinya:", df_spp.index)
+        
+        if selected_spp:
+            for i in selected_spp:
+                spp_receipt = st.download_button(
+                    label=f"Unduh Kwitansi SPP untuk {df_spp['Nama Siswa'][i]}",
+                    data=generate_receipt(df_spp["Nama Siswa"][i], df_spp["Kelas"][i], df_spp["Jumlah Pembayaran"][i], 'SPP'),
+                    file_name=f"kwitansi_spp_{df_spp['Nama Siswa'][i]}.pdf",
+                    mime="application/pdf",
+                )
 
     elif selected == "Pengelolaan Gaji Guru":
         st.title("Pengelolaan Gaji Guru")
