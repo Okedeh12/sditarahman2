@@ -24,7 +24,6 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
         df_existing = pd.read_csv(CSV_PEMBAYARAN_SPP)
         df = pd.concat([df_existing, df], ignore_index=True)
     df.to_csv(CSV_PEMBAYARAN_SPP, index=False)
-    return CSV_PEMBAYARAN_SPP
 
 def save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan):
     df = pd.DataFrame([[nama_guru, bulan_gaji, gaji, tunjangan]], columns=['nama_guru', 'bulan_gaji', 'gaji', 'tunjangan'])
@@ -32,7 +31,6 @@ def save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan):
         df_existing = pd.read_csv(CSV_GAJI_GURU)
         df = pd.concat([df_existing, df], ignore_index=True)
     df.to_csv(CSV_GAJI_GURU, index=False)
-    return CSV_GAJI_GURU
 
 def save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun):
     df = pd.DataFrame([[nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun]], columns=['nama_siswa', 'kelas', 'biaya_daftar_ulang', 'pembayaran', 'tahun'])
@@ -40,7 +38,6 @@ def save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun):
         df_existing = pd.read_csv(CSV_DAFTAR_ULANG)
         df = pd.concat([df_existing, df], ignore_index=True)
     df.to_csv(CSV_DAFTAR_ULANG, index=False)
-    return CSV_DAFTAR_ULANG
 
 def save_pengeluaran(nama_barang_jasa, keterangan, total_biaya):
     df = pd.DataFrame([[nama_barang_jasa, keterangan, total_biaya]], columns=['nama_barang_jasa', 'keterangan', 'total_biaya'])
@@ -48,7 +45,6 @@ def save_pengeluaran(nama_barang_jasa, keterangan, total_biaya):
         df_existing = pd.read_csv(CSV_PENGELUARAN)
         df = pd.concat([df_existing, df], ignore_index=True)
     df.to_csv(CSV_PENGELUARAN, index=False)
-    return CSV_PENGELUARAN
 
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, receipt_type):
     pdf = FPDF()
@@ -158,19 +154,75 @@ def main():
             }
         )
 
-    if selected == "Laporan Keuangan":
+    if selected == "Pembayaran SPP":
+        st.title("Pembayaran SPP")
+        with st.form("spp_form"):
+            nama_siswa = st.text_input("Nama Siswa")
+            kelas = st.text_input("Kelas")
+            bulan = st.text_input("Bulan")
+            jumlah = st.number_input("Jumlah Pembayaran", min_value=0)
+            biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0)
+            submitted = st.form_submit_button("Simpan")
+
+            if submitted:
+                save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+                st.success("Pembayaran SPP berhasil disimpan!")
+
+        st.write("**Data Pembayaran SPP**")
+        st.dataframe(df_spp)
+
+    elif selected == "Pengelolaan Gaji Guru":
+        st.title("Pengelolaan Gaji Guru")
+        with st.form("gaji_form"):
+            nama_guru = st.text_input("Nama Guru")
+            bulan_gaji = st.text_input("Bulan Gaji")
+            gaji = st.number_input("Gaji", min_value=0)
+            tunjangan = st.number_input("Tunjangan", min_value=0)
+            submitted = st.form_submit_button("Simpan")
+
+            if submitted:
+                save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan)
+                st.success("Gaji Guru berhasil disimpan!")
+
+        st.write("**Data Gaji Guru**")
+        st.dataframe(df_gaji)
+
+    elif selected == "Daftar Ulang":
+        st.title("Daftar Ulang")
+        with st.form("daftar_ulang_form"):
+            nama_siswa = st.text_input("Nama Siswa")
+            kelas = st.text_input("Kelas")
+            biaya_daftar_ulang = st.number_input("Biaya Daftar Ulang", min_value=0)
+            pembayaran = st.number_input("Pembayaran", min_value=0)
+            tahun = st.text_input("Tahun")
+            submitted = st.form_submit_button("Simpan")
+
+            if submitted:
+                save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun)
+                st.success("Pembayaran Daftar Ulang berhasil disimpan!")
+
+        st.write("**Data Daftar Ulang**")
+        st.dataframe(df_daftar_ulang)
+
+    elif selected == "Pengeluaran":
+        st.title("Pengelolaan Pengeluaran")
+        with st.form("pengeluaran_form"):
+            nama_barang_jasa = st.text_input("Nama Barang/Jasa")
+            keterangan = st.text_input("Keterangan")
+            total_biaya = st.number_input("Total Biaya", min_value=0)
+            submitted = st.form_submit_button("Simpan")
+
+            if submitted:
+                save_pengeluaran(nama_barang_jasa, keterangan, total_biaya)
+                st.success("Pengeluaran berhasil disimpan!")
+
+        st.write("**Data Pengeluaran**")
+        st.dataframe(df_pengeluaran)
+
+    elif selected == "Laporan Keuangan":
         st.title("Laporan Keuangan")
         
-        st.write("**Export Data to Excel**")
-        if st.button("Export to Excel"):
-            excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
-            st.download_button(
-                label="Download Excel File",
-                data=excel_data,
-                file_name="laporan_keuangan.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-
+        # Display dataframes
         st.write("**Laporan Pembayaran SPP**")
         st.dataframe(df_spp)
 
@@ -182,6 +234,15 @@ def main():
 
         st.write("**Laporan Pengeluaran**")
         st.dataframe(df_pengeluaran)
+
+        # Export to Excel
+        excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
+        st.download_button(
+            label="Download Excel File",
+            data=excel_data,
+            file_name="laporan_keuangan.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
 if __name__ == "__main__":
     main()
