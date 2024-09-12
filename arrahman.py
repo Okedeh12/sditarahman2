@@ -279,7 +279,6 @@ def main():
 
     elif selected == "Pengeluaran":
         st.title("Pengelolaan Pengeluaran")
-        uploaded_file = st.file_uploader("Upload Foto Bukti Pengeluaran (opsional)", type=["jpg", "jpeg", "png"], key="upload_pengeluaran_image")
         with st.form("pengeluaran_form"):
             nama_penerima = st.text_input("Nama Penerima", key="pengeluaran_nama_penerima")
             keterangan_biaya = st.text_input("Keterangan Biaya", key="pengeluaran_keterangan_biaya")
