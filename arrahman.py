@@ -17,6 +17,7 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
 
     # Create a DataFrame and save to CSV
     df = pd.DataFrame([{
+        'id': pd.Timestamp.now().strftime('%Y%m%d%H%M%S'),
         'nama_siswa': nama_siswa,
         'kelas': kelas,
         'bulan': bulan,
@@ -37,7 +38,7 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     df.to_csv(csv_path, index=False)
     return csv_path
 
-def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
+def generate_receipt(id, nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a well-formatted payment receipt as a PDF."""
     pdf = FPDF()
     pdf.add_page()
@@ -50,6 +51,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     # Detail section
     pdf.set_font("Arial", size=12)
     details = [
+        ("ID Pembayaran", id),
         ("Nama Siswa", nama_siswa),
         ("Kelas", kelas),
         ("Bulan", bulan),
@@ -75,7 +77,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     return pdf_output
 
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
-    """Save teacher salary details to CSV."""
+    """Save teacher salary details to CSV."""    
     df = pd.DataFrame([{
         'nama_guru': nama_guru,
         'bulan': bulan,
@@ -127,16 +129,26 @@ if selected == "Pembayaran SPP":
                 st.success("Pembayaran berhasil disimpan!")
                 
                 # Generate and offer receipt download
-                pdf_receipt = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
-                st.download_button(label="Download Kwitansi Pembayaran SPP", data=pdf_receipt, file_name=f"Kwitansi_SPP_{nama_siswa}_{bulan}.pdf", mime='application/pdf')
+                df = pd.read_csv(csv_path)
+                latest_entry = df.iloc[-1]
+                id = latest_entry['id']
+                pdf_receipt = generate_receipt(id, nama_siswa, kelas, bulan, jumlah, biaya_spp)
+                st.download_button(label="Download Kwitansi Pembayaran SPP", data=pdf_receipt, file_name=f"Kwitansi_SPP_{id}.pdf", mime='application/pdf')
             else:
                 st.error("Semua field harus diisi!")
-    
-    # Tampilkan data pembayaran SPP
-    if os.path.exists(os.path.join(TEMP_DIR, 'pembayaran_spp.csv')):
-        st.subheader("Riwayat Pembayaran SPP")
+
+    st.subheader("Cari Pembayaran SPP")
+    search_by = st.selectbox("Cari berdasarkan:", ["Nama Siswa", "Kelas"])
+    search_value = st.text_input(f"Masukkan {search_by}")
+
+    if search_value:
         df_spp = pd.read_csv(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'))
-        st.dataframe(df_spp)
+        if search_by == "Nama Siswa":
+            df_filtered = df_spp[df_spp['nama_siswa'].str.contains(search_value, case=False, na=False)]
+        else:
+            df_filtered = df_spp[df_spp['kelas'].str.contains(search_value, case=False, na=False)]
+        
+        st.dataframe(df_filtered)
 
 elif selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
