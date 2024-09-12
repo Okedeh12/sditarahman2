@@ -206,97 +206,40 @@ def main():
                     key=f"download_spp_{selected_index}"
                 )
 
-def save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan, status_pembayaran):
-    # Load existing data if available
-    if os.path.exists(CSV_GAJI_GURU):
-        df_existing = pd.read_csv(CSV_GAJI_GURU)
-    else:
-        df_existing = pd.DataFrame(columns=['nama_guru', 'bulan_gaji', 'gaji', 'tunjangan', 'status_pembayaran', 'waktu_input'])
-    
-    # Append new data
-    df_new = pd.DataFrame([[
-        nama_guru, bulan_gaji, gaji, tunjangan, status_pembayaran, datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    ]], columns=['nama_guru', 'bulan_gaji', 'gaji', 'tunjangan', 'status_pembayaran', 'waktu_input'])
-    df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-    df_combined.to_csv(CSV_GAJI_GURU, index=False)
+    elif selected == "Pengelolaan Gaji Guru":
+        st.title("Pengelolaan Gaji Guru")
+        with st.form("gaji_form"):
+            nama_guru = st.text_input("Nama Guru", key="gaji_nama_guru")
+            bulan_gaji = st.text_input("Bulan Gaji", key="gaji_bulan_gaji")
+            gaji = st.number_input("Gaji", min_value=0, key="gaji_gaji")
+            tunjangan = st.number_input("Tunjangan", min_value=0, key="gaji_tunjangan")
+            submitted = st.form_submit_button("Simpan")
 
-def generate_receipt(nama_guru, bulan_gaji, gaji, tunjangan):
-    # Create a PDF receipt for Gaji Guru
-    from fpdf import FPDF
-    pdf = FPDF()
-    pdf.add_page()
+            if submitted:
+                save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan)
+                df_gaji = pd.read_csv(CSV_GAJI_GURU)
+                st.success("Gaji Guru berhasil disimpan!")
 
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, txt="Kwitansi Pembayaran Gaji Guru", ln=True, align='C')
-    pdf.ln(10)
-    
-    details = [
-        ("Nama Guru", nama_guru),
-        ("Bulan Gaji", bulan_gaji),
-        ("Gaji", f"Rp {gaji:,}"),
-        ("Tunjangan", f"Rp {tunjangan:,}"),
-        ("Tanggal", datetime.now().strftime('%Y-%m-%d'))
-    ]
+        st.write("**Data Gaji Guru**")
+        search_gaji = st.text_input("Cari Guru", key="search_gaji")
+        if search_gaji:
+            df_gaji = df_gaji[df_gaji['nama_guru'].str.contains(search_gaji, case=False, na=False)]
+        st.dataframe(df_gaji)
 
-    pdf.set_font("Arial", size=12)
-    for label, value in details:
-        pdf.cell(100, 10, txt=label, border=1)
-        pdf.cell(90, 10, txt=f": {value}", border=1, ln=True)
-    
-    pdf.ln(10)
-    pdf.cell(0, 10, txt="Tanda Terima", ln=True, align='R')
-
-    from io import BytesIO
-    pdf_output = BytesIO()
-    pdf_output.write(pdf.output(dest='S').encode('latin1'))
-    pdf_output.seek(0)
-
-    return pdf_output
-
-def main():
-    st.set_page_config(page_title="Pengelolaan Gaji Guru", layout="wide")
-    st.title("Pengelolaan Gaji Guru")
-
-    with st.form("gaji_form"):
-        nama_guru = st.text_input("Nama Guru", key="gaji_nama_guru")
-        bulan_gaji = st.text_input("Bulan Gaji", key="gaji_bulan_gaji")
-        gaji = st.number_input("Gaji", min_value=0, key="gaji_gaji")
-        tunjangan = st.number_input("Tunjangan", min_value=0, key="gaji_tunjangan")
-        status_pembayaran = st.selectbox("Status Pembayaran", ["Belum Dibayar", "Sudah Dibayar"], key="gaji_status_pembayaran")
-        submitted = st.form_submit_button("Simpan")
-
-        if submitted:
-            save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan, status_pembayaran)
-            st.success("Gaji Guru berhasil disimpan!")
-    
-    st.write("**Data Gaji Guru**")
-    df_gaji = pd.read_csv(CSV_GAJI_GURU) if os.path.exists(CSV_GAJI_GURU) else pd.DataFrame()
-    
-    # Display data with a search option
-    search_gaji = st.text_input("Cari Guru", key="search_gaji")
-    if search_gaji:
-        df_gaji = df_gaji[df_gaji['nama_guru'].str.contains(search_gaji, case=False, na=False)]
-    st.dataframe(df_gaji)
-
-    st.write("**Download Kwitansi Gaji Guru**")
-    if not df_gaji.empty:
-        options = list(df_gaji.index)
-        selected_index = st.selectbox("Pilih Nomor Urut Kwitansi", options)
-        if st.button("Download Kwitansi"):
-            row = df_gaji.loc[selected_index]
-            receipt = generate_receipt(
-                row.get('nama_guru', ''),
-                row.get('bulan_gaji', ''),
-                row.get('gaji', 0),
-                row.get('tunjangan', 0)
-            )
-            st.download_button(
-                label=f"Download Kwitansi {row.get('nama_guru', '')} ({row.get('bulan_gaji', '')})",
-                data=receipt,
-                file_name=f"kwitansi_gaji_{row.get('nama_guru', '')}_{row.get('bulan_gaji', '')}.pdf",
-                mime="application/pdf",
-                key=f"download_gaji_{selected_index}"
-            )
+        st.write("**Download Kwitansi Gaji Guru**")
+        if not df_gaji.empty:
+            options = list(df_gaji.index)
+            selected_index = st.selectbox("Pilih Nomor Urut Kwitansi", options)
+            if st.button("Download Kwitansi"):
+                row = df_gaji.loc[selected_index]
+                receipt = generate_receipt(row.get('nama_guru', ''), row.get('bulan_gaji', ''), '', row.get('gaji', 0), row.get('tunjangan', 0), 'gaji')
+                st.download_button(
+                    label=f"Download Kwitansi {row.get('nama_guru', '')} ({row.get('bulan_gaji', '')})",
+                    data=receipt,
+                    file_name=f"kwitansi_gaji_{row.get('nama_guru', '')}_{row.get('bulan_gaji', '')}.pdf",
+                    mime="application/pdf",
+                    key=f"download_gaji_{selected_index}"
+                )
 
     elif selected == "Daftar Ulang":
         st.title("Daftar Ulang")
