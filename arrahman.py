@@ -157,7 +157,7 @@ def main():
 
     with st.sidebar:
         selected = option_menu(
-            menu_title="Main Menu",
+            menu_title="SD IT ARRAHMAN",
             options=["Pembayaran SPP", "Pengelolaan Gaji Guru", "Daftar Ulang", "Pengeluaran", "Laporan Keuangan"],
             icons=["cash", "bar-chart", "person-badge", "clipboard-check", "money"],
             menu_icon="cast",
