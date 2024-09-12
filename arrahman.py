@@ -318,31 +318,30 @@ def main():
                     key=f"download_pengeluaran_{selected_index}"
                 )
 
-    elif selected == "Laporan Keuangan":
-        st.title("Laporan Keuangan")
-        
-        # Display dataframes
-        st.write("**Laporan Pembayaran SPP**")
-        st.dataframe(df_spp)
-
-        st.write("**Laporan Gaji Guru**")
-        st.dataframe(df_gaji)
-
-        st.write("**Laporan Daftar Ulang**")
-        st.dataframe(df_daftar_ulang)
-
-        st.write("**Laporan Pengeluaran**")
-        st.dataframe(df_pengeluaran)
-
-        # Export to Excel
-        excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
-        st.download_button(
-            label="Download Excel File",
-            data=excel_data,
-            file_name="laporan_keuangan.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_excel"
-        )
+   elif selected == "Laporan Keuangan":
+        password = st.text_input("Masukkan Password", type="password", key="password")
+        if st.button("Masuk"):
+            if password == 'your_password_here':  # Ganti dengan password Anda
+                st.title("Laporan Keuangan")
+                
+                # Tampilkan laporan keuangan
+                st.write("**Laporan Keuangan SPP**")
+                if not df_spp.empty:
+                    st.write(df_spp)
+                    
+                st.write("**Laporan Keuangan Gaji Guru**")
+                if not df_gaji.empty:
+                    st.write(df_gaji)
+                    
+                st.write("**Laporan Keuangan Daftar Ulang**")
+                if not df_daftar_ulang.empty:
+                    st.write(df_daftar_ulang)
+                    
+                st.write("**Laporan Keuangan Pengeluaran**")
+                if not df_pengeluaran.empty:
+                    st.write(df_pengeluaran)
+            else:
+                st.error("Password salah! Silakan coba lagi.")
 
 if __name__ == "__main__":
     main()
