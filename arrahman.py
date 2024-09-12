@@ -6,6 +6,40 @@ from fpdf import FPDF
 import streamlit as st
 from streamlit_option_menu import option_menu
 
+# Define the temporary directory for Streamlit
+TEMP_DIR = '/tmp'
+
+# Define the path to the logo file
+LOGO_PATH = "assets/HN.png"  # Path to your local logo file
+
+def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
+    """Save SPP payment details to CSV."""
+    total_tagihan_tahun = biaya_spp * 12
+    tagihan_sudah_terbayar = jumlah
+    sisa_tagihan_belum_terbayar = total_tagihan_tahun - tagihan_sudah_terbayar
+
+    # Create a DataFrame and save to CSV
+    df = pd.DataFrame([{
+        'nama_siswa': nama_siswa,
+        'kelas': kelas,
+        'bulan': bulan,
+        'jumlah': jumlah,
+        'biaya_spp': biaya_spp,
+        'total_tagihan_tahun': total_tagihan_tahun,
+        'tagihan_sudah_terbayar': tagihan_sudah_terbayar,
+        'sisa_tagihan_belum_terbayar': sisa_tagihan_belum_terbayar,
+        'tanggal': datetime.now().strftime('%Y-%m-%d')
+    }])
+
+    csv_path = os.path.join(TEMP_DIR, 'pembayaran_spp.csv')
+
+    if os.path.exists(csv_path):
+        df_existing = pd.read_csv(csv_path)
+        df = pd.concat([df_existing, df], ignore_index=True)
+    
+    df.to_csv(csv_path, index=False)
+    return csv_path
+
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a well-formatted payment receipt as a PDF."""
     pdf = FPDF()
@@ -19,7 +53,9 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     if os.path.exists(LOGO_PATH):
         pdf.image(LOGO_PATH, x=10, y=8, w=33)  # Adjust x, y, and w as needed
     else:
-        pdf.cell(0, 10, txt="Logo file not found.", ln=True, align='C')
+        # Use a placeholder or handle the missing logo gracefully
+        pdf.set_font("Arial", size=12)
+        pdf.cell(0, 10, txt="Logo Tidak Ditemukan", ln=True, align='C')
 
     # Title section
     pdf.set_font("Arial", 'B', 16)
@@ -55,11 +91,12 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     pdf.cell(0, 10, txt="Tanda Terima", ln=True, align='R')
     
     # Output to BytesIO
-    pdf_output = io.BytesIO()
-    pdf.output(pdf_output)
+    pdf_output = BytesIO()
+    pdf_output.write(pdf.output(dest='S').encode('latin1'))
     pdf_output.seek(0)
 
     return pdf_output
+
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
     """Save teacher salary details to CSV."""
     df = pd.DataFrame([{
