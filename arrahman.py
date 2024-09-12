@@ -6,11 +6,17 @@ from fpdf import FPDF
 import streamlit as st
 from streamlit_option_menu import option_menu
 
-# Define the temporary directory for Streamlit
-TEMP_DIR = '/tmp'
+# Define the persistent directory for storing CSV files
+PERSISTENT_DIR = 'data'
+if not os.path.exists(PERSISTENT_DIR):
+    os.makedirs(PERSISTENT_DIR)
+
+# Define the path to the CSV files
+CSV_PEMBAYARAN_SPP = os.path.join(PERSISTENT_DIR, 'pembayaran_spp.csv')
+CSV_GAJI_GURU = os.path.join(PERSISTENT_DIR, 'gaji_guru.csv')
 
 # Define the path to the logo file
-LOGO_PATH = "assets/HN.png"  # Path to your local logo file
+LOGO_PATH = "assets/HN.png"
 
 def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Save SPP payment details to CSV."""
@@ -31,14 +37,12 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
         'tanggal': datetime.now().strftime('%Y-%m-%d')
     }])
 
-    csv_path = os.path.join(TEMP_DIR, 'pembayaran_spp.csv')
-
-    if os.path.exists(csv_path):
-        df_existing = pd.read_csv(csv_path)
+    if os.path.exists(CSV_PEMBAYARAN_SPP):
+        df_existing = pd.read_csv(CSV_PEMBAYARAN_SPP)
         df = pd.concat([df_existing, df], ignore_index=True)
     
-    df.to_csv(csv_path, index=False)
-    return csv_path
+    df.to_csv(CSV_PEMBAYARAN_SPP, index=False)
+    return CSV_PEMBAYARAN_SPP
 
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a well-formatted payment receipt as a PDF."""
@@ -107,17 +111,24 @@ def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
         'tanggal': datetime.now().strftime('%Y-%m-%d')
     }])
 
-    csv_path = os.path.join(TEMP_DIR, 'gaji_guru.csv')
-
-    if os.path.exists(csv_path):
-        df_existing = pd.read_csv(csv_path)
+    if os.path.exists(CSV_GAJI_GURU):
+        df_existing = pd.read_csv(CSV_GAJI_GURU)
         df = pd.concat([df_existing, df], ignore_index=True)
     
-    df.to_csv(csv_path, index=False)
-    return csv_path
+    df.to_csv(CSV_GAJI_GURU, index=False)
+    return CSV_GAJI_GURU
+
+def load_data():
+    """Load existing data from CSV files."""
+    data_spp = pd.read_csv(CSV_PEMBAYARAN_SPP) if os.path.exists(CSV_PEMBAYARAN_SPP) else pd.DataFrame()
+    data_gaji = pd.read_csv(CSV_GAJI_GURU) if os.path.exists(CSV_GAJI_GURU) else pd.DataFrame()
+    return data_spp, data_gaji
 
 # Streamlit App
 def main():
+    # Load existing data
+    df_spp, df_gaji = load_data()
+
     with st.sidebar:
         selected = option_menu(
             menu_title="Main Menu",
@@ -161,10 +172,9 @@ def main():
                 else:
                     st.error("Semua field harus diisi!")
         
-        # Tampilkan data pembayaran SPP
-        if os.path.exists(os.path.join(TEMP_DIR, 'pembayaran_spp.csv')):
+        # Display data from CSV
+        if not df_spp.empty:
             st.subheader("Riwayat Pembayaran SPP")
-            df_spp = pd.read_csv(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'))
             st.dataframe(df_spp)
             
             st.subheader("Unduh Kwitansi Pembayaran")
@@ -186,11 +196,11 @@ def main():
         st.title("Laporan Keuangan")
         st.write("Halaman laporan keuangan sekolah.")
         
-        # Tampilkan laporan pembayaran SPP dalam bentuk CSV
-        if os.path.exists(os.path.join(TEMP_DIR, 'pembayaran_spp.csv')):
+        # Display download button for SPP payments report
+        if os.path.exists(CSV_PEMBAYARAN_SPP):
             st.download_button(
                 label="Download Laporan Pembayaran SPP", 
-                data=open(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'), 'rb').read(), 
+                data=open(CSV_PEMBAYARAN_SPP, 'rb').read(), 
                 file_name='laporan_pembayaran_spp.csv', 
                 mime='text/csv'
             )
@@ -217,10 +227,9 @@ def main():
                 else:
                     st.error("Semua field harus diisi!")
 
-        # Tampilkan data gaji guru
-        if os.path.exists(os.path.join(TEMP_DIR, 'gaji_guru.csv')):
+        # Display data from CSV
+        if not df_gaji.empty:
             st.subheader("Riwayat Gaji Guru")
-            df_gaji = pd.read_csv(os.path.join(TEMP_DIR, 'gaji_guru.csv'))
             st.dataframe(df_gaji)
 
             st.subheader("Unduh Laporan Gaji Guru")
@@ -228,7 +237,7 @@ def main():
             
             st.download_button(
                 label="Download Laporan Gaji Guru", 
-                data=open(os.path.join(TEMP_DIR, 'gaji_guru.csv'), 'rb').read(), 
+                data=open(CSV_GAJI_GURU, 'rb').read(), 
                 file_name='laporan_gaji_guru.csv', 
                 mime='text/csv'
             )
