@@ -69,8 +69,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     
     # Output to BytesIO
     pdf_output = BytesIO()
-    pdf_data = pdf.output(dest='S').encode('latin1')
-    pdf_output.write(pdf_data)
+    pdf.output(pdf_output)
     pdf_output.seek(0)
 
     return pdf_output
@@ -129,7 +128,7 @@ if selected == "Pembayaran SPP":
                 
                 # Generate and offer receipt download
                 pdf_receipt = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
-                st.download_button(label="Download Kwitansi Pembayaran SPP", data=pdf_receipt, file_name=f"Kwitansi_SPP_{nama_siswa}_{bulan}.pdf", mime='application/octet-stream')
+                st.download_button(label="Download Kwitansi Pembayaran SPP", data=pdf_receipt, file_name=f"Kwitansi_SPP_{nama_siswa}_{bulan}.pdf", mime='application/pdf')
             else:
                 st.error("Semua field harus diisi!")
     
@@ -145,11 +144,11 @@ elif selected == "Laporan Keuangan":
     
     # Tampilkan laporan pembayaran SPP dalam bentuk CSV
     if os.path.exists(os.path.join(TEMP_DIR, 'pembayaran_spp.csv')):
-        st.download_button(label="Download Laporan Pembayaran SPP", data=open(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'), 'rb'), file_name='laporan_pembayaran_spp.csv', mime='text/csv')
+        st.download_button(label="Download Laporan Pembayaran SPP", data=open(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'), 'rb').read(), file_name='laporan_pembayaran_spp.csv', mime='text/csv')
     
     # Tampilkan laporan gaji guru dalam bentuk CSV
     if os.path.exists(os.path.join(TEMP_DIR, 'gaji_guru.csv')):
-        st.download_button(label="Download Laporan Gaji Guru", data=open(os.path.join(TEMP_DIR, 'gaji_guru.csv'), 'rb'), file_name='laporan_gaji_guru.csv', mime='text/csv')
+        st.download_button(label="Download Laporan Gaji Guru", data=open(os.path.join(TEMP_DIR, 'gaji_guru.csv'), 'rb').read(), file_name='laporan_gaji_guru.csv', mime='text/csv')
 
 elif selected == "Pengelolaan Gaji Guru":
     st.title("Pengelolaan Gaji Guru")
