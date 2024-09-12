@@ -294,17 +294,6 @@ def main():
                     key=f"download_pengeluaran_{index}"
                 )
 
-        st.write("**Upload File CSV Pengeluaran**")
-        uploaded_csv_file = st.file_uploader("Pilih file CSV", type=["csv"], key="upload_pengeluaran_csv")
-        if uploaded_csv_file:
-            try:
-                new_data = pd.read_csv(uploaded_csv_file)
-                new_data.to_csv(CSV_PENGELUARAN, mode='a', header=False, index=False)
-                df_pengeluaran = pd.read_csv(CSV_PENGELUARAN)
-                st.success("File CSV berhasil diupload dan ditambahkan ke data pengeluaran!")
-                st.dataframe(df_pengeluaran)
-            except Exception as e:
-                st.error(f"Terjadi kesalahan: {e}")
 
     elif selected == "Laporan Keuangan":
         st.title("Laporan Keuangan")
