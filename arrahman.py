@@ -46,22 +46,6 @@ def download_image(image_url):
     else:
         raise Exception("Failed to download image")
 
-def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
-    """Generate a well-formatted payment receipt as a PDF."""
-    pdf = FPDF()
-    pdf.add_page()
-
-    # School details
-    school_name = "SD IT Arrahman"
-    school_address = "Jl. Jatimulyo"
-    logo_url = "def download_image(image_url):
-    """Download an image from a URL."""
-    response = requests.get(image_url)
-    if response.status_code == 200:
-        return BytesIO(response.content)
-    else:
-        raise Exception("Failed to download image")
-
 def download_image(image_url):
     """Download an image from a URL."""
     response = requests.get(image_url)
@@ -78,7 +62,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     # School details
     school_name = "SD IT ARAHMAN"
     school_address = "JATIMULYO"
-    logo_url = "https://drive.google.com/file/d/1BsQjQQALuQsx0AIZR1i490f6zxtScBt-/view?usp=sharing"  # Replace with your actual logo URL
+    logo_url = "https://drive.google.com/uc?export=view&id=1BsQjQQALuQsx0AIZR1i490f6zxtScBt-"  # Corrected direct download URL
 
     # Add logo
     try:
@@ -126,6 +110,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     pdf_output.seek(0)
 
     return pdf_output
+    
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
     """Save teacher salary details to CSV."""
     df = pd.DataFrame([{
