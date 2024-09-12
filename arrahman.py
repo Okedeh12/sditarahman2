@@ -39,12 +39,17 @@ def save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun):
         df = pd.concat([df_existing, df], ignore_index=True)
     df.to_csv(CSV_DAFTAR_ULANG, index=False)
 
-def save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya):
+def save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya, file_path=None):
     df = pd.DataFrame([[nama_penerima, keterangan_biaya, total_biaya]], columns=['nama_penerima', 'keterangan_biaya', 'total_biaya'])
     if os.path.exists(CSV_PENGELUARAN):
         df_existing = pd.read_csv(CSV_PENGELUARAN)
         df = pd.concat([df_existing, df], ignore_index=True)
     df.to_csv(CSV_PENGELUARAN, index=False)
+    
+    # Save uploaded file if available
+    if file_path:
+        new_file_path = os.path.join(PERSISTENT_DIR, os.path.basename(file_path))
+        os.rename(file_path, new_file_path)
 
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, receipt_type):
     pdf = FPDF()
@@ -260,10 +265,17 @@ def main():
             nama_penerima = st.text_input("Nama Penerima", key="pengeluaran_nama_penerima")
             keterangan_biaya = st.text_input("Keterangan Biaya", key="pengeluaran_keterangan_biaya")
             total_biaya = st.number_input("Total Biaya", min_value=0, key="pengeluaran_total_biaya")
+            uploaded_file = st.file_uploader("Upload Foto Bukti Pengeluaran (opsional)", type=["jpg", "jpeg", "png"], key="upload_pengeluaran_image")
             submitted = st.form_submit_button("Simpan")
 
             if submitted:
-                save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya)
+                file_path = None
+                if uploaded_file:
+                    file_path = os.path.join(PERSISTENT_DIR, uploaded_file.name)
+                    with open(file_path, "wb") as f:
+                        f.write(uploaded_file.getvalue())
+                
+                save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya, file_path)
                 df_pengeluaran = pd.read_csv(CSV_PENGELUARAN)
                 st.success("Pengeluaran berhasil disimpan!")
 
@@ -283,10 +295,10 @@ def main():
                 )
 
         st.write("**Upload File CSV Pengeluaran**")
-        uploaded_file = st.file_uploader("Pilih file CSV", type=["csv"], key="upload_pengeluaran_csv")
-        if uploaded_file:
+        uploaded_csv_file = st.file_uploader("Pilih file CSV", type=["csv"], key="upload_pengeluaran_csv")
+        if uploaded_csv_file:
             try:
-                new_data = pd.read_csv(uploaded_file)
+                new_data = pd.read_csv(uploaded_csv_file)
                 new_data.to_csv(CSV_PENGELUARAN, mode='a', header=False, index=False)
                 df_pengeluaran = pd.read_csv(CSV_PENGELUARAN)
                 st.success("File CSV berhasil diupload dan ditambahkan ke data pengeluaran!")
