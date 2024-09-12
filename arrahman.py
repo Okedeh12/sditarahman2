@@ -46,13 +46,13 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     # School details
     school_name = "SD IT ARAHMAN"
     school_address = "JATIMULYO"
-    logo_path = "HN.png"  # Local image file path
+    logo_path = "HN.png"  # Path to your local logo file
 
     # Add logo
-    try:
+    if os.path.exists(logo_path):
         pdf.image(logo_path, x=10, y=8, w=33)  # Adjust x, y, and w as needed
-    except Exception as e:
-        print(f"Error loading logo: {e}")
+    else:
+        print("Logo file not found.")
 
     # Title section
     pdf.set_font("Arial", 'B', 16)
@@ -89,7 +89,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     
     # Output to BytesIO
     pdf_output = BytesIO()
-    pdf.output(pdf_output, dest='S')  # Direct output to BytesIO
+    pdf.output(pdf_output)
     pdf_output.seek(0)
 
     return pdf_output
