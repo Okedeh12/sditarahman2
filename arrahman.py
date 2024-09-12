@@ -105,12 +105,14 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     pdf.cell(200, 10, txt=f"Biaya SPP per Bulan: Rp {biaya_spp}", ln=True)
     pdf.cell(200, 10, txt=f"Tanggal: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
     
-    # Save to a BytesIO object
+    # Generate the PDF into a string and then convert it to a BytesIO object
     pdf_output = BytesIO()
-    pdf.output(pdf_output)
+    pdf_data = pdf.output(dest='S').encode('latin1')  # 'S' tells FPDF to return as string
+    pdf_output.write(pdf_data)
     pdf_output.seek(0)  # Move to the start of the BytesIO object
 
     return pdf_output
+
 
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
     """Save teacher salary details to SQLite and CSV."""
