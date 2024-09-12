@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 from io import BytesIO
 from fpdf import FPDF
+import xlsxwriter
 import streamlit as st
 from streamlit_option_menu import option_menu
 
