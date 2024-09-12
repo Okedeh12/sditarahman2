@@ -9,18 +9,14 @@ from streamlit_option_menu import option_menu
 # Define the temporary directory for Streamlit
 TEMP_DIR = '/tmp'
 
-# Define file paths for CSV
-CSV_PEMBAYARAN_SPP = os.path.join(TEMP_DIR, 'pembayaran_spp.csv')
-CSV_GAJI_GURU = os.path.join(TEMP_DIR, 'gaji_guru.csv')
-
 def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Save SPP payment details to CSV."""
     total_tagihan_tahun = biaya_spp * 12
     tagihan_sudah_terbayar = jumlah
     sisa_tagihan_belum_terbayar = total_tagihan_tahun - tagihan_sudah_terbayar
 
-    # Create a new record
-    new_record = {
+    # Create a DataFrame and save to CSV
+    df = pd.DataFrame([{
         'nama_siswa': nama_siswa,
         'kelas': kelas,
         'bulan': bulan,
@@ -30,17 +26,16 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
         'tagihan_sudah_terbayar': tagihan_sudah_terbayar,
         'sisa_tagihan_belum_terbayar': sisa_tagihan_belum_terbayar,
         'tanggal': datetime.now().strftime('%Y-%m-%d')
-    }
+    }])
+
+    csv_path = os.path.join(TEMP_DIR, 'pembayaran_spp.csv')
+
+    if os.path.exists(csv_path):
+        df_existing = pd.read_csv(csv_path)
+        df = pd.concat([df_existing, df], ignore_index=True)
     
-    # Load existing data if CSV exists
-    if os.path.exists(CSV_PEMBAYARAN_SPP):
-        df = pd.read_csv(CSV_PEMBAYARAN_SPP)
-    else:
-        df = pd.DataFrame(columns=new_record.keys())
-    
-    # Append new record
-    df = df.append(new_record, ignore_index=True)
-    df.to_csv(CSV_PEMBAYARAN_SPP, index=False)
+    df.to_csv(csv_path, index=False)
+    return csv_path
 
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a well-formatted payment receipt as a PDF."""
@@ -82,23 +77,22 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
 
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
     """Save teacher salary details to CSV."""
-    new_record = {
+    df = pd.DataFrame([{
         'nama_guru': nama_guru,
         'bulan': bulan,
         'gaji': gaji,
         'tunjangan': tunjangan,
         'tanggal': datetime.now().strftime('%Y-%m-%d')
-    }
+    }])
+
+    csv_path = os.path.join(TEMP_DIR, 'gaji_guru.csv')
+
+    if os.path.exists(csv_path):
+        df_existing = pd.read_csv(csv_path)
+        df = pd.concat([df_existing, df], ignore_index=True)
     
-    # Load existing data if CSV exists
-    if os.path.exists(CSV_GAJI_GURU):
-        df = pd.read_csv(CSV_GAJI_GURU)
-    else:
-        df = pd.DataFrame(columns=new_record.keys())
-    
-    # Append new record
-    df = df.append(new_record, ignore_index=True)
-    df.to_csv(CSV_GAJI_GURU, index=False)
+    df.to_csv(csv_path, index=False)
+    return csv_path
 
 # Streamlit App
 with st.sidebar:
@@ -130,7 +124,7 @@ if selected == "Pembayaran SPP":
         
         if submit:
             if nama_siswa and kelas and bulan and jumlah > 0 and biaya_spp > 0:
-                save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+                csv_path = save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
                 st.success("Pembayaran berhasil disimpan!")
                 
                 # Generate and offer receipt download
@@ -140,9 +134,9 @@ if selected == "Pembayaran SPP":
                 st.error("Semua field harus diisi!")
     
     # Tampilkan data pembayaran SPP
-    if os.path.exists(CSV_PEMBAYARAN_SPP):
+    if os.path.exists(os.path.join(TEMP_DIR, 'pembayaran_spp.csv')):
         st.subheader("Riwayat Pembayaran SPP")
-        df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP)
+        df_spp = pd.read_csv(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'))
         st.dataframe(df_spp)
 
 elif selected == "Laporan Keuangan":
@@ -150,12 +144,12 @@ elif selected == "Laporan Keuangan":
     st.write("Halaman laporan keuangan sekolah.")
     
     # Tampilkan laporan pembayaran SPP dalam bentuk CSV
-    if os.path.exists(CSV_PEMBAYARAN_SPP):
-        st.download_button(label="Download Laporan Pembayaran SPP", data=open(CSV_PEMBAYARAN_SPP, 'rb'), file_name='laporan_pembayaran_spp.csv', mime='text/csv')
+    if os.path.exists(os.path.join(TEMP_DIR, 'pembayaran_spp.csv')):
+        st.download_button(label="Download Laporan Pembayaran SPP", data=open(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'), 'rb'), file_name='laporan_pembayaran_spp.csv', mime='text/csv')
     
     # Tampilkan laporan gaji guru dalam bentuk CSV
-    if os.path.exists(CSV_GAJI_GURU):
-        st.download_button(label="Download Laporan Gaji Guru", data=open(CSV_GAJI_GURU, 'rb'), file_name='laporan_gaji_guru.csv', mime='text/csv')
+    if os.path.exists(os.path.join(TEMP_DIR, 'gaji_guru.csv')):
+        st.download_button(label="Download Laporan Gaji Guru", data=open(os.path.join(TEMP_DIR, 'gaji_guru.csv'), 'rb'), file_name='laporan_gaji_guru.csv', mime='text/csv')
 
 elif selected == "Pengelolaan Gaji Guru":
     st.title("Pengelolaan Gaji Guru")
@@ -171,8 +165,7 @@ elif selected == "Pengelolaan Gaji Guru":
         
         if submit:
             if nama_guru and bulan and gaji > 0 and tunjangan >= 0:
-                save_gaji_guru(nama_guru, bulan, gaji, tunjangan)
+                csv_path = save_gaji_guru(nama_guru, bulan, gaji, tunjangan)
                 st.success("Data gaji guru berhasil disimpan!")
             else:
                 st.error("Semua field harus diisi!")
-
