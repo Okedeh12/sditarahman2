@@ -9,6 +9,9 @@ from streamlit_option_menu import option_menu
 # Define the temporary directory for Streamlit
 TEMP_DIR = '/tmp'
 
+# Define the path to the logo file
+LOGO_PATH = "assets/HN.png"  # Path to your local logo file
+
 def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Save SPP payment details to CSV."""
     total_tagihan_tahun = biaya_spp * 12
@@ -37,28 +40,6 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     df.to_csv(csv_path, index=False)
     return csv_path
 
-def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
-    """Save teacher salary details to CSV."""
-    df = pd.DataFrame([{
-        'nama_guru': nama_guru,
-        'bulan': bulan,
-        'gaji': gaji,
-        'tunjangan': tunjangan,
-        'tanggal': datetime.now().strftime('%Y-%m-%d')
-    }])
-
-    csv_path = os.path.join(TEMP_DIR, 'gaji_guru.csv')
-
-    if os.path.exists(csv_path):
-        df_existing = pd.read_csv(csv_path)
-        df = pd.concat([df_existing, df], ignore_index=True)
-    
-    df.to_csv(csv_path, index=False)
-    return csv_path
-
-# Define the path to the logo file
-LOGO_PATH = "HN.png"  # Ensure this path is correct
-
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a well-formatted payment receipt as a PDF."""
     pdf = FPDF()
@@ -72,7 +53,9 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     if os.path.exists(LOGO_PATH):
         pdf.image(LOGO_PATH, x=10, y=8, w=33)  # Adjust x, y, and w as needed
     else:
-        print("Logo file not found.")
+        # Use a placeholder or handle the missing logo gracefully
+        pdf.set_font("Arial", size=12)
+        pdf.cell(0, 10, txt="Logo Tidak Ditemukan", ln=True, align='C')
 
     # Title section
     pdf.set_font("Arial", 'B', 16)
@@ -109,10 +92,29 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     
     # Output to BytesIO
     pdf_output = BytesIO()
-    pdf.output(pdf_output)
+    pdf_output.write(pdf.output(dest='S').encode('latin1'))
     pdf_output.seek(0)
 
     return pdf_output
+
+def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
+    """Save teacher salary details to CSV."""
+    df = pd.DataFrame([{
+        'nama_guru': nama_guru,
+        'bulan': bulan,
+        'gaji': gaji,
+        'tunjangan': tunjangan,
+        'tanggal': datetime.now().strftime('%Y-%m-%d')
+    }])
+
+    csv_path = os.path.join(TEMP_DIR, 'gaji_guru.csv')
+
+    if os.path.exists(csv_path):
+        df_existing = pd.read_csv(csv_path)
+        df = pd.concat([df_existing, df], ignore_index=True)
+    
+    df.to_csv(csv_path, index=False)
+    return csv_path
 
 # Streamlit App
 def main():
@@ -152,7 +154,7 @@ def main():
                     pdf_receipt = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
                     st.download_button(
                         label="Download Kwitansi Pembayaran SPP", 
-                        data=pdf_receipt.getvalue(), 
+                        data=pdf_receipt, 
                         file_name=f"Kwitansi_SPP_{nama_siswa}_{bulan}.pdf", 
                         mime='application/pdf'
                     )
@@ -175,7 +177,7 @@ def main():
                 pdf_receipt = generate_receipt(row['nama_siswa'], row['kelas'], row['bulan'], row['jumlah'], row['biaya_spp'])
                 st.download_button(
                     label="Download Kwitansi Pembayaran SPP", 
-                    data=pdf_receipt.getvalue(), 
+                    data=pdf_receipt, 
                     file_name=f"Kwitansi_SPP_{row['nama_siswa']}_{row['bulan']}.pdf", 
                     mime='application/pdf'
                 )
@@ -192,34 +194,44 @@ def main():
                 file_name='laporan_pembayaran_spp.csv', 
                 mime='text/csv'
             )
+
+    elif selected == "Pengelolaan Gaji Guru":
+        st.title("Pengelolaan Gaji Guru")
+        st.write("Halaman untuk mengelola gaji guru.")
         
-        # Tampilkan laporan gaji guru dalam bentuk CSV
+        with st.form("gaji_guru_form", clear_on_submit=True):
+            nama_guru = st.text_input("Nama Guru")
+            bulan_gaji = st.text_input("Bulan")
+            gaji = st.number_input("Gaji", min_value=0, step=1000)
+            tunjangan = st.number_input("Tunjangan", min_value=0, step=1000)
+            submit_gaji = st.form_submit_button("Simpan Gaji")
+            
+            if submit_gaji:
+                if nama_guru and bulan_gaji and gaji >= 0 and tunjangan >= 0:
+                    csv_path = save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan)
+                    st.success("Data gaji berhasil disimpan!")
+                    
+                    # Display the saved data
+                    df_gaji = pd.read_csv(csv_path)
+                    st.dataframe(df_gaji)
+                else:
+                    st.error("Semua field harus diisi!")
+
+        # Tampilkan data gaji guru
         if os.path.exists(os.path.join(TEMP_DIR, 'gaji_guru.csv')):
+            st.subheader("Riwayat Gaji Guru")
+            df_gaji = pd.read_csv(os.path.join(TEMP_DIR, 'gaji_guru.csv'))
+            st.dataframe(df_gaji)
+
+            st.subheader("Unduh Laporan Gaji Guru")
+            st.write("Unduh laporan gaji guru dalam bentuk CSV.")
+            
             st.download_button(
                 label="Download Laporan Gaji Guru", 
                 data=open(os.path.join(TEMP_DIR, 'gaji_guru.csv'), 'rb').read(), 
                 file_name='laporan_gaji_guru.csv', 
                 mime='text/csv'
             )
-
-    elif selected == "Pengelolaan Gaji Guru":
-        st.title("Pengelolaan Gaji Guru")
-        st.write("Halaman untuk pengelolaan gaji guru.")
-
-        # Form untuk input gaji guru
-        with st.form("gaji_guru_form", clear_on_submit=True):
-            nama_guru = st.text_input("Nama Guru")
-            bulan = st.text_input("Bulan")
-            gaji = st.number_input("Gaji Pokok", min_value=0, step=100000)
-            tunjangan = st.number_input("Tunjangan", min_value=0, step=100000)
-            submit = st.form_submit_button("Simpan Gaji Guru")
-            
-            if submit:
-                if nama_guru and bulan and gaji > 0 and tunjangan >= 0:
-                    csv_path = save_gaji_guru(nama_guru, bulan, gaji, tunjangan)
-                    st.success("Data gaji guru berhasil disimpan!")
-                else:
-                    st.error("Semua field harus diisi!")
 
 if __name__ == "__main__":
     main()
