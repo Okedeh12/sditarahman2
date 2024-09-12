@@ -38,14 +38,6 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     df.to_csv(csv_path, index=False)
     return csv_path
 
-def download_image(image_url):
-    """Download an image from a URL."""
-    response = requests.get(image_url)
-    if response.status_code == 200:
-        return BytesIO(response.content)
-    else:
-        raise Exception("Failed to download image")
-
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a well-formatted payment receipt as a PDF."""
     pdf = FPDF()
@@ -54,12 +46,11 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     # School details
     school_name = "SD IT ARAHMAN"
     school_address = "JATIMULYO"
-    logo_url = "https://drive.google.com/uc?export=download&id=1YW-poz1paVE3G0kcwXWkqxCmwdWCACNL"  # Direct download URL
+    logo_path = "HN.png"  # Local image file path
 
     # Add logo
     try:
-        logo_image = download_image(logo_url)
-        pdf.image(logo_image, x=10, y=8, w=33)  # Adjust x, y, and w as needed
+        pdf.image(logo_path, x=10, y=8, w=33)  # Adjust x, y, and w as needed
     except Exception as e:
         print(f"Error loading logo: {e}")
 
