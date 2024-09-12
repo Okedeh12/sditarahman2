@@ -53,27 +53,22 @@ def export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran):
 
 def main():
     st.title("Sistem Administrasi Sekolah")
-    
+
     # Load data
     df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP) if pd.io.common.file_exists(CSV_PEMBAYARAN_SPP) else pd.DataFrame()
     df_gaji = pd.read_csv(CSV_GAJI_GURU) if pd.io.common.file_exists(CSV_GAJI_GURU) else pd.DataFrame()
     df_daftar_ulang = pd.read_csv(CSV_DAFTAR_ULANG) if pd.io.common.file_exists(CSV_DAFTAR_ULANG) else pd.DataFrame()
     df_pengeluaran = pd.read_csv(CSV_PENGELUARAN) if pd.io.common.file_exists(CSV_PENGELUARAN) else pd.DataFrame()
-    
+
     # Sidebar for navigation
-    selected = st.sidebar.radio(
-        "Pilih Halaman",
-        ["Pembayaran SPP", "Pengelolaan Gaji Guru", "Daftar Ulang", "Pengeluaran", "Laporan Keuangan"],
-        icons=["cash", "bar-chart", "person-badge", "clipboard-check", "money"],
-        menu_icon="cast",
-        default_index=0,
-        styles={
-            "container": {"padding": "5!important", "background-color": "#f0f2f6"},
-            "icon": {"color": "orange", "font-size": "25px"},
-            "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px", "--hover-color": "#eee"},
-            "nav-link-selected": {"background-color": "#ff6f61"},
-        }
-    )
+    try:
+        selected = st.sidebar.radio(
+            label="Pilih Halaman",
+            options=["Pembayaran SPP", "Pengelolaan Gaji Guru", "Daftar Ulang", "Pengeluaran", "Laporan Keuangan"]
+        )
+    except TypeError as e:
+        st.error(f"An error occurred: {e}")
+        return
 
     if selected == "Pembayaran SPP":
         st.title("Pembayaran SPP")
