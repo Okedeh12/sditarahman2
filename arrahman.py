@@ -168,125 +168,125 @@ def main():
     if selected == "Pembayaran SPP":
         st.title("Pembayaran SPP")
         with st.form("spp_form"):
-            nama_siswa = st.text_input("Nama Siswa")
-            kelas = st.text_input("Kelas")
-            bulan = st.text_input("Bulan")
-            jumlah = st.number_input("Jumlah Pembayaran", min_value=0)
-            biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0)
+            nama_siswa = st.text_input("Nama Siswa", key="spp_nama_siswa")
+            kelas = st.text_input("Kelas", key="spp_kelas")
+            bulan = st.text_input("Bulan", key="spp_bulan")
+            jumlah = st.number_input("Jumlah Pembayaran", min_value=0, key="spp_jumlah")
+            biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0, key="spp_biaya_spp")
             submitted = st.form_submit_button("Simpan")
 
             if submitted:
                 save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+                df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP)
                 st.success("Pembayaran SPP berhasil disimpan!")
 
         st.write("**Data Pembayaran SPP**")
         st.dataframe(df_spp)
 
-        # Generate and download receipt
-        if not df_spp.empty:
-            st.write("**Download Kwitansi Pembayaran SPP**")
-            for index, row in df_spp.iterrows():
-                receipt = generate_receipt(row['nama_siswa'], row['kelas'], row['bulan'], row['jumlah'], row['biaya_spp'], 'spp')
-                st.download_button(
-                    label=f"Download Kwitansi {row['nama_siswa']} ({row['bulan']})",
-                    data=receipt,
-                    file_name=f"kwitansi_spp_{row['nama_siswa']}_{row['bulan']}.pdf",
-                    mime="application/pdf"
-                )
+        st.write("**Download Kwitansi Pembayaran SPP**")
+        for index, row in df_spp.iterrows():
+            receipt = generate_receipt(row['nama_siswa'], row['kelas'], row['bulan'], row['jumlah'], row['biaya_spp'], 'spp')
+            st.download_button(
+                label=f"Download Kwitansi {row['nama_siswa']} ({row['bulan']})",
+                data=receipt,
+                file_name=f"kwitansi_spp_{row['nama_siswa']}_{row['bulan']}.pdf",
+                mime="application/pdf",
+                key=f"download_spp_{index}"
+            )
 
     elif selected == "Pengelolaan Gaji Guru":
         st.title("Pengelolaan Gaji Guru")
         with st.form("gaji_form"):
-            nama_guru = st.text_input("Nama Guru")
-            bulan_gaji = st.text_input("Bulan Gaji")
-            gaji = st.number_input("Gaji", min_value=0)
-            tunjangan = st.number_input("Tunjangan", min_value=0)
+            nama_guru = st.text_input("Nama Guru", key="gaji_nama_guru")
+            bulan_gaji = st.text_input("Bulan Gaji", key="gaji_bulan_gaji")
+            gaji = st.number_input("Gaji", min_value=0, key="gaji_gaji")
+            tunjangan = st.number_input("Tunjangan", min_value=0, key="gaji_tunjangan")
             submitted = st.form_submit_button("Simpan")
 
             if submitted:
                 save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan)
+                df_gaji = pd.read_csv(CSV_GAJI_GURU)
                 st.success("Gaji Guru berhasil disimpan!")
 
         st.write("**Data Gaji Guru**")
         st.dataframe(df_gaji)
 
-        # Generate and download receipt
-        if not df_gaji.empty:
-            st.write("**Download Kwitansi Gaji Guru**")
-            for index, row in df_gaji.iterrows():
-                receipt = generate_receipt(row['nama_guru'], row['bulan_gaji'], row['gaji'], row['tunjangan'], row['tunjangan'], 'gaji')
-                st.download_button(
-                    label=f"Download Kwitansi {row['nama_guru']} ({row['bulan_gaji']})",
-                    data=receipt,
-                    file_name=f"kwitansi_gaji_{row['nama_guru']}_{row['bulan_gaji']}.pdf",
-                    mime="application/pdf"
-                )
+        st.write("**Download Kwitansi Gaji Guru**")
+        for index, row in df_gaji.iterrows():
+            receipt = generate_receipt(row['nama_guru'], row['bulan_gaji'], '', row['gaji'], row['tunjangan'], 'gaji')
+            st.download_button(
+                label=f"Download Kwitansi {row['nama_guru']} ({row['bulan_gaji']})",
+                data=receipt,
+                file_name=f"kwitansi_gaji_{row['nama_guru']}_{row['bulan_gaji']}.pdf",
+                mime="application/pdf",
+                key=f"download_gaji_{index}"
+            )
 
     elif selected == "Daftar Ulang":
         st.title("Daftar Ulang")
         with st.form("daftar_ulang_form"):
-            nama_siswa = st.text_input("Nama Siswa")
-            kelas = st.text_input("Kelas")
-            biaya_daftar_ulang = st.number_input("Biaya Daftar Ulang", min_value=0)
-            pembayaran = st.number_input("Pembayaran", min_value=0)
-            tahun = st.text_input("Tahun")
+            nama_siswa = st.text_input("Nama Siswa", key="daftar_ulang_nama_siswa")
+            kelas = st.text_input("Kelas", key="daftar_ulang_kelas")
+            biaya_daftar_ulang = st.number_input("Biaya Daftar Ulang", min_value=0, key="daftar_ulang_biaya_daftar_ulang")
+            pembayaran = st.number_input("Pembayaran", min_value=0, key="daftar_ulang_pembayaran")
+            tahun = st.text_input("Tahun", key="daftar_ulang_tahun")
             submitted = st.form_submit_button("Simpan")
 
             if submitted:
                 save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun)
+                df_daftar_ulang = pd.read_csv(CSV_DAFTAR_ULANG)
                 st.success("Pembayaran Daftar Ulang berhasil disimpan!")
 
         st.write("**Data Daftar Ulang**")
         st.dataframe(df_daftar_ulang)
 
-        # Generate and download receipt
-        if not df_daftar_ulang.empty:
-            st.write("**Download Kwitansi Daftar Ulang**")
-            for index, row in df_daftar_ulang.iterrows():
-                receipt = generate_receipt(row['nama_siswa'], row['kelas'], '', row['pembayaran'], row['biaya_daftar_ulang'], 'daftar_ulang')
-                st.download_button(
-                    label=f"Download Kwitansi {row['nama_siswa']} ({row['tahun']})",
-                    data=receipt,
-                    file_name=f"kwitansi_daftar_ulang_{row['nama_siswa']}_{row['tahun']}.pdf",
-                    mime="application/pdf"
-                )
+        st.write("**Download Kwitansi Daftar Ulang**")
+        for index, row in df_daftar_ulang.iterrows():
+            receipt = generate_receipt(row['nama_siswa'], row['kelas'], '', row['pembayaran'], row['biaya_daftar_ulang'], 'daftar_ulang')
+            st.download_button(
+                label=f"Download Kwitansi {row['nama_siswa']} ({row['tahun']})",
+                data=receipt,
+                file_name=f"kwitansi_daftar_ulang_{row['nama_siswa']}_{row['tahun']}.pdf",
+                mime="application/pdf",
+                key=f"download_daftar_ulang_{index}"
+            )
 
     elif selected == "Pengeluaran":
         st.title("Pengelolaan Pengeluaran")
         with st.form("pengeluaran_form"):
-            nama_penerima = st.text_input("Nama Penerima")
-            keterangan_biaya = st.text_input("Keterangan Biaya")
-            total_biaya = st.number_input("Total Biaya", min_value=0)
+            nama_penerima = st.text_input("Nama Penerima", key="pengeluaran_nama_penerima")
+            keterangan_biaya = st.text_input("Keterangan Biaya", key="pengeluaran_keterangan_biaya")
+            total_biaya = st.number_input("Total Biaya", min_value=0, key="pengeluaran_total_biaya")
             submitted = st.form_submit_button("Simpan")
 
             if submitted:
                 save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya)
+                df_pengeluaran = pd.read_csv(CSV_PENGELUARAN)
                 st.success("Pengeluaran berhasil disimpan!")
 
         st.write("**Data Pengeluaran**")
         st.dataframe(df_pengeluaran)
 
-        # Generate and download receipt
-        if not df_pengeluaran.empty:
-            st.write("**Download Kwitansi Pengeluaran**")
-            for index, row in df_pengeluaran.iterrows():
-                receipt = generate_expense_receipt(row['nama_penerima'], row['keterangan_biaya'], row['total_biaya'])
-                st.download_button(
-                    label=f"Download Kwitansi {row['nama_penerima']}",
-                    data=receipt,
-                    file_name=f"kwitansi_pengeluaran_{row['nama_penerima']}.pdf",
-                    mime="application/pdf"
-                )
+        st.write("**Download Kwitansi Pengeluaran**")
+        for index, row in df_pengeluaran.iterrows():
+            receipt = generate_expense_receipt(row['nama_penerima'], row['keterangan_biaya'], row['total_biaya'])
+            st.download_button(
+                label=f"Download Kwitansi {row['nama_penerima']}",
+                data=receipt,
+                file_name=f"kwitansi_pengeluaran_{row['nama_penerima']}.pdf",
+                mime="application/pdf",
+                key=f"download_pengeluaran_{index}"
+            )
 
         # Upload file
         st.write("**Upload File CSV Pengeluaran**")
-        uploaded_file = st.file_uploader("Pilih file CSV", type=["csv"])
+        uploaded_file = st.file_uploader("Pilih file CSV", type=["csv"], key="upload_pengeluaran_csv")
         if uploaded_file:
             try:
                 new_data = pd.read_csv(uploaded_file)
                 new_data.to_csv(CSV_PENGELUARAN, mode='a', header=False, index=False)
-                st.success("File CSV berhasil diupload dan ditambahkan ke data pengeluaran!")
                 df_pengeluaran = pd.read_csv(CSV_PENGELUARAN)
+                st.success("File CSV berhasil diupload dan ditambahkan ke data pengeluaran!")
                 st.dataframe(df_pengeluaran)
             except Exception as e:
                 st.error(f"Terjadi kesalahan: {e}")
@@ -313,7 +313,8 @@ def main():
             label="Download Excel File",
             data=excel_data,
             file_name="laporan_keuangan.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="download_excel"
         )
 
 if __name__ == "__main__":
