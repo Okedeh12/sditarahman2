@@ -265,7 +265,6 @@ def main():
             nama_penerima = st.text_input("Nama Penerima", key="pengeluaran_nama_penerima")
             keterangan_biaya = st.text_input("Keterangan Biaya", key="pengeluaran_keterangan_biaya")
             total_biaya = st.number_input("Total Biaya", min_value=0, key="pengeluaran_total_biaya")
-            uploaded_file = st.file_uploader("Upload Foto Bukti Pengeluaran (opsional)", type=["jpg", "jpeg", "png"], key="upload_pengeluaran_image")
             submitted = st.form_submit_button("Simpan")
 
             if submitted:
@@ -293,7 +292,7 @@ def main():
                     mime="application/pdf",
                     key=f"download_pengeluaran_{index}"
                 )
-
+        uploaded_file = st.file_uploader("Upload Foto Bukti Pengeluaran (opsional)", type=["jpg", "jpeg", "png"], key="upload_pengeluaran_image")
 
     elif selected == "Laporan Keuangan":
         st.title("Laporan Keuangan")
