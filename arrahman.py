@@ -46,14 +46,6 @@ def download_image(image_url):
     else:
         raise Exception("Failed to download image")
 
-def download_image(image_url):
-    """Download an image from a URL."""
-    response = requests.get(image_url)
-    if response.status_code == 200:
-        return BytesIO(response.content)
-    else:
-        raise Exception("Failed to download image")
-
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a well-formatted payment receipt as a PDF."""
     pdf = FPDF()
@@ -106,7 +98,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     
     # Output to BytesIO
     pdf_output = BytesIO()
-    pdf.output(pdf_output)
+    pdf.output(pdf_output, dest='S')  # Direct output to BytesIO
     pdf_output.seek(0)
 
     return pdf_output
