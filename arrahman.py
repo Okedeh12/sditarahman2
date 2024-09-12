@@ -4,6 +4,7 @@ import os
 from io import BytesIO
 from fpdf import FPDF
 from streamlit_option_menu import option_menu
+from datetime import datetime
 
 # Define file paths
 CSV_PEMBAYARAN_SPP = 'data/pembayaran_spp.csv'
@@ -128,6 +129,17 @@ def load_data():
     df_pengeluaran = pd.read_csv(CSV_PENGELUARAN) if os.path.exists(CSV_PENGELUARAN) else pd.DataFrame()
     return df_spp, df_gaji, df_daftar_ulang, df_pengeluaran
 
+def export_to_excel(spp_df, gaji_df, daftar_ulang_df, pengeluaran_df):
+    with BytesIO() as buffer:
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+            spp_df.to_excel(writer, sheet_name='Pembayaran SPP', index=False)
+            gaji_df.to_excel(writer, sheet_name='Gaji Guru', index=False)
+            daftar_ulang_df.to_excel(writer, sheet_name='Daftar Ulang', index=False)
+            pengeluaran_df.to_excel(writer, sheet_name='Pengeluaran', index=False)
+        
+        buffer.seek(0)
+        return buffer.getvalue()
+
 def main():
     df_spp, df_gaji, df_daftar_ulang, df_pengeluaran = load_data()
 
@@ -142,70 +154,34 @@ def main():
                 "container": {"padding": "5!important", "background-color": "#f0f2f6"},
                 "icon": {"color": "orange", "font-size": "25px"},
                 "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px", "--hover-color": "#eee"},
-                "nav-link-selected": {"background-color": "#4CAF50"},
+                "nav-link-selected": {"background-color": "#ff6f61"},
             }
         )
 
-    if selected == "Pembayaran SPP":
-        st.title("Pembayaran SPP")
-        st.write("Halaman untuk pembayaran SPP siswa.")
-        
-        with st.form("pembayaran_spp_form", clear_on_submit=True):
-            nama_siswa = st.text_input("Nama Siswa")
-            kelas = st.text_input("Kelas")
-            bulan = st.text_input("Bulan")
-            jumlah = st.number_input("Jumlah Pembayaran", min_value=0, step=1000)
-            biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0, step=1000)
-            submit = st.form_submit_button("Simpan Pembayaran")
-            
-            if submit:
-                if nama_siswa and kelas and bulan and jumlah > 0 and biaya_spp > 0:
-                    csv_path = save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
-                    st.success("Pembayaran SPP berhasil disimpan!")
-                    
-                    # Generate and offer receipt download
-                    pdf_receipt = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, "spp")
-                    st.download_button(
-                        label="Download Kwitansi Pembayaran SPP", 
-                        data=pdf_receipt, 
-                        file_name=f"Kwitansi_Pembayaran_SPP_{nama_siswa}.pdf", 
-                        mime='application/pdf'
-                    )
-                else:
-                    st.error("Semua field harus diisi!")
-        
-        if not df_spp.empty:
-            st.subheader("Riwayat Pembayaran SPP")
-            st.dataframe(df_spp)
-
-            st.subheader("Unduh Kwitansi Pembayaran SPP")
-            st.write("Pilih data pembayaran SPP untuk diunduh kwitansi.")
-            
-            selected_row = st.selectbox("Pilih Pembayaran", df_spp.index, format_func=lambda x: f"{df_spp.iloc[x]['nama_siswa']} - {df_spp.iloc[x]['bulan']}")
-            
-            if st.button("Unduh Kwitansi Terpilih"):
-                row = df_spp.iloc[selected_row]
-                pdf_receipt = generate_receipt(row['nama_siswa'], row['kelas'], row['bulan'], row['jumlah'], row['biaya_spp'], "spp")
-                st.download_button(
-                    label="Download Kwitansi Pembayaran SPP", 
-                    data=pdf_receipt, 
-                    file_name=f"Kwitansi_Pembayaran_SPP_{row['nama_siswa']}.pdf", 
-                    mime='application/pdf'
-                )
-    
-    elif selected == "Laporan Keuangan":
+    if selected == "Laporan Keuangan":
         st.title("Laporan Keuangan")
-        st.write("Halaman laporan keuangan sekolah.")
         
-        st.subheader("Laporan Pembayaran SPP")
+        st.write("**Export Data to Excel**")
+        if st.button("Export to Excel"):
+            excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
+            st.download_button(
+                label="Download Excel File",
+                data=excel_data,
+                file_name="laporan_keuangan.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
+        st.write("**Laporan Pembayaran SPP**")
         st.dataframe(df_spp)
-        
-        st.subheader("Laporan Gaji Guru")
+
+        st.write("**Laporan Gaji Guru**")
         st.dataframe(df_gaji)
 
-    elif selected == "Pengelolaan Gaji Guru":
-        st.title("Pengelolaan Gaji Guru")
-        st.write("Halaman untuk mengelola gaji guru.")
+        st.write("**Laporan Daftar Ulang**")
+        st.dataframe(df_daftar_ulang)
+
+        st.write("**Laporan Pengeluaran**")
+        st.dataframe(df_pengeluaran)
         
         with st.form("gaji_guru_form", clear_on_submit=True):
             nama_guru = st.text_input("Nama Guru")
