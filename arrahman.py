@@ -45,7 +45,7 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     df.to_csv(CSV_PEMBAYARAN_SPP, index=False)
     return CSV_PEMBAYARAN_SPP
 
-def save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran):
+def save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun):
     """Save re-registration payment details to CSV."""
     total_tagihan_tahun = biaya_daftar_ulang
     sisa_tagihan_belum_terbayar = total_tagihan_tahun - pembayaran
@@ -57,6 +57,7 @@ def save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran):
         'biaya_daftar_ulang': biaya_daftar_ulang,
         'pembayaran': pembayaran,
         'sisa_tagihan_belum_terbayar': sisa_tagihan_belum_terbayar,
+        'tahun': tahun,
         'tanggal': datetime.now().strftime('%Y-%m-%d')
     }])
 
@@ -67,7 +68,7 @@ def save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran):
     df.to_csv(CSV_DAFTAR_ULANG, index=False)
     return CSV_DAFTAR_ULANG
 
-def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, type='spp'):
+def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, tahun, type='spp'):
     """Generate a well-formatted payment receipt as a PDF."""
     pdf = FPDF()
     pdf.add_page()
@@ -108,6 +109,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, type='spp'):
         ("Total Tagihan SPP 1 Tahun" if type == 'spp' else "Total Tagihan", f"Rp {biaya_spp * 12:,}" if type == 'spp' else f"Rp {biaya_spp:,}"),
         ("Tagihan Sudah Terbayar" if type == 'spp' else "Pembayaran", f"Rp {jumlah:,}"),
         ("Sisa Tagihan Belum Terbayar", f"Rp {biaya_spp * 12 - jumlah:,}" if type == 'spp' else f"Rp {biaya_spp - jumlah:,}"),
+        ("Tahun", tahun if type == 'daftar_ulang' else ''),
         ("Tanggal", datetime.now().strftime('%Y-%m-%d'))
     ]
     
@@ -210,19 +212,20 @@ def main():
             kelas = st.text_input("Kelas (Daftar Ulang)")
             biaya_daftar_ulang = st.number_input("Biaya Daftar Ulang 1 Tahun", min_value=0, step=1000)
             pembayaran = st.number_input("Pembayaran", min_value=0, step=1000)
+            tahun = st.selectbox("Tahun", [str(year) for year in range(2024, 2031)])
             submit_daftar_ulang = st.form_submit_button("Simpan Pembayaran Daftar Ulang")
             
             if submit_daftar_ulang:
-                if nama_siswa and kelas and biaya_daftar_ulang > 0 and pembayaran >= 0:
-                    csv_path = save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran)
+                if nama_siswa and kelas and biaya_daftar_ulang > 0 and pembayaran >= 0 and tahun:
+                    csv_path = save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun)
                     st.success("Pembayaran daftar ulang berhasil disimpan!")
                     
                     # Generate and offer receipt download
-                    pdf_receipt = generate_receipt(nama_siswa, kelas, "", pembayaran, biaya_daftar_ulang, type='daftar_ulang')
+                    pdf_receipt = generate_receipt(nama_siswa, kelas, "", pembayaran, biaya_daftar_ulang, tahun, type='daftar_ulang')
                     st.download_button(
                         label="Download Kwitansi Pembayaran Daftar Ulang", 
                         data=pdf_receipt, 
-                        file_name=f"Kwitansi_Daftar_Ulang_{nama_siswa}.pdf", 
+                        file_name=f"Kwitansi_Daftar_Ulang_{nama_siswa}_{tahun}.pdf", 
                         mime='application/pdf'
                     )
                 else:
@@ -240,11 +243,11 @@ def main():
             
             if st.button("Unduh Kwitansi Terpilih"):
                 row = df_daftar_ulang.iloc[selected_row]
-                pdf_receipt = generate_receipt(row['nama_siswa'], row['kelas'], "", row['pembayaran'], row['biaya_daftar_ulang'], type='daftar_ulang')
+                pdf_receipt = generate_receipt(row['nama_siswa'], row['kelas'], "", row['pembayaran'], row['biaya_daftar_ulang'], row['tahun'], type='daftar_ulang')
                 st.download_button(
                     label="Download Kwitansi Pembayaran Daftar Ulang", 
                     data=pdf_receipt, 
-                    file_name=f"Kwitansi_Daftar_Ulang_{row['nama_siswa']}.pdf", 
+                    file_name=f"Kwitansi_Daftar_Ulang_{row['nama_siswa']}_{row['tahun']}.pdf", 
                     mime='application/pdf'
                 )
 
