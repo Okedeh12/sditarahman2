@@ -59,11 +59,15 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
               (nama_siswa, kelas, bulan, jumlah, biaya_spp, total_tagihan_tahun, tagihan_sudah_terbayar, sisa_tagihan_belum_terbayar, datetime.now().strftime('%Y-%m-%d')))
     conn.commit()
-    conn.close()
-
+    
     # Save to CSV
     df = pd.read_sql('SELECT * FROM pembayaran_spp', conn)
-    df.to_csv(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'), index=False)
+    csv_path = os.path.join(TEMP_DIR, 'pembayaran_spp.csv')
+    df.to_csv(csv_path, index=False)
+    
+    conn.close()
+
+    return csv_path
 
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a well-formatted payment receipt as a PDF."""
@@ -110,11 +114,15 @@ def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
     c.execute('INSERT INTO gaji_guru (nama_guru, bulan, gaji, tunjangan, tanggal) VALUES (?, ?, ?, ?, ?)',
               (nama_guru, bulan, gaji, tunjangan, datetime.now().strftime('%Y-%m-%d')))
     conn.commit()
-    conn.close()
-
+    
     # Save to CSV
     df = pd.read_sql('SELECT * FROM gaji_guru', conn)
-    df.to_csv(os.path.join(TEMP_DIR, 'gaji_guru.csv'), index=False)
+    csv_path = os.path.join(TEMP_DIR, 'gaji_guru.csv')
+    df.to_csv(csv_path, index=False)
+    
+    conn.close()
+
+    return csv_path
 
 # Initialize the database and create tables
 create_tables()
@@ -149,7 +157,7 @@ if selected == "Pembayaran SPP":
         
         if submit:
             if nama_siswa and kelas and bulan and jumlah > 0 and biaya_spp > 0:
-                save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+                csv_path = save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
                 st.success("Pembayaran berhasil disimpan!")
                 
                 # Generate and offer receipt download
@@ -190,7 +198,7 @@ elif selected == "Pengelolaan Gaji Guru":
         
         if submit:
             if nama_guru and bulan and gaji > 0 and tunjangan >= 0:
-                save_gaji_guru(nama_guru, bulan, gaji, tunjangan)
+                csv_path = save_gaji_guru(nama_guru, bulan, gaji, tunjangan)
                 st.success("Data gaji guru berhasil disimpan!")
             else:
                 st.error("Semua field harus diisi!")
