@@ -39,8 +39,8 @@ def save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun):
         df = pd.concat([df_existing, df], ignore_index=True)
     df.to_csv(CSV_DAFTAR_ULANG, index=False)
 
-def save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya, file_path=None):
-    df = pd.DataFrame([[nama_penerima, keterangan_biaya, total_biaya, file_path]], columns=['nama_penerima', 'keterangan_biaya', 'total_biaya', 'file_path'])
+def save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya):
+    df = pd.DataFrame([[nama_penerima, keterangan_biaya, total_biaya]], columns=['nama_penerima', 'keterangan_biaya', 'total_biaya'])
     if os.path.exists(CSV_PENGELUARAN):
         df_existing = pd.read_csv(CSV_PENGELUARAN)
         df = pd.concat([df_existing, df], ignore_index=True)
@@ -146,51 +146,24 @@ def handle_csv_upload(uploaded_csv_file):
     except Exception as e:
         st.error(f"Terjadi kesalahan: {e}")
 
-def handle_photo_upload(file, row_index):
-    if file:
-        file_path = os.path.join(PERSISTENT_DIR, file.name)
-        with open(file_path, "wb") as f:
-            f.write(file.getbuffer())
-        df = pd.read_csv(CSV_PENGELUARAN)
-        df.at[row_index, 'file_path'] = file_path
-        df.to_csv(CSV_PENGELUARAN, index=False)
-        st.success("Foto berhasil diupload!")
-
 def export_to_excel_with_photos(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran):
-    from openpyxl import Workbook
-    from openpyxl.drawing.image import Image
-    from io import BytesIO
-    
-    output = BytesIO()
-    workbook = Workbook()
-    
-    # Helper function to add dataframe to workbook sheet
-    def add_df_to_sheet(sheet, df, sheet_name):
-        for r_idx, row in enumerate(df.itertuples(), 1):
-            for c_idx, value in enumerate(row[1:], 1):
-                sheet.cell(row=r_idx, column=c_idx, value=value)
-        sheet.title = sheet_name
-
-    # Create sheets for each dataframe
-    add_df_to_sheet(workbook.create_sheet(), df_spp, 'Pembayaran SPP')
-    add_df_to_sheet(workbook.create_sheet(), df_gaji, 'Gaji Guru')
-    add_df_to_sheet(workbook.create_sheet(), df_daftar_ulang, 'Daftar Ulang')
-    
-    # Add Pengeluaran data with photos
-    pengeluaran_sheet = workbook.create_sheet(title='Pengeluaran')
-    for r_idx, row in enumerate(df_pengeluaran.itertuples(), 1):
-        for c_idx, value in enumerate(row[1:], 1):
-            pengeluaran_sheet.cell(row=r_idx, column=c_idx, value=value)
-        if row.file_path and os.path.exists(row.file_path):
-            img = Image(row.file_path)
-            img.width = 200  # Resize as needed
-            img.height = 150
-            pengeluaran_sheet.add_image(img, f'E{r_idx}')
-
-    workbook.save(output)
-    output.seek(0)
-    
-    return output.getvalue()
+    with BytesIO() as output:
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df_spp.to_excel(writer, sheet_name='Pembayaran SPP', index=False)
+            df_gaji.to_excel(writer, sheet_name='Gaji Guru', index=False)
+            df_daftar_ulang.to_excel(writer, sheet_name='Daftar Ulang', index=False)
+            df_pengeluaran.to_excel(writer, sheet_name='Pengeluaran', index=False)
+            
+            # Add photos of Pengeluaran
+            workbook  = writer.book
+            worksheet = workbook.add_worksheet('Pengeluaran Photos')
+            
+            for idx, row in df_pengeluaran.iterrows():
+                photo_path = row.get('file_path')
+                if photo_path and os.path.exists(photo_path):
+                    worksheet.insert_image(f'A{idx+1}', photo_path)
+        
+        return output.getvalue()
 
 st.title("Aplikasi Manajemen Keuangan Sekolah")
 
@@ -279,7 +252,7 @@ elif selected_option == "Pengeluaran":
     st.subheader("Data Pengeluaran")
     if not df_pengeluaran.empty:
         selected_rows = st.multiselect(
-            "Pilih data untuk diunduh kwitansi atau foto:",
+            "Pilih data untuk diunduh kwitansi:",
             df_pengeluaran.index,
             format_func=lambda x: f"{df_pengeluaran.iloc[x]['nama_penerima']}"
         )
@@ -293,15 +266,6 @@ elif selected_option == "Pengeluaran":
                 mime="application/pdf",
                 key=f"download_pengeluaran_{index}"
             )
-            if row.file_path and os.path.exists(row.file_path):
-                with open(row.file_path, "rb") as photo_file:
-                    st.download_button(
-                        label=f"Download Foto {row.get('nama_penerima', '')}",
-                        data=photo_file,
-                        file_name=os.path.basename(row.file_path),
-                        mime="image/jpeg",
-                        key=f"download_foto_{index}"
-                    )
     else:
         st.info("Tidak ada data Pengeluaran.")
 
