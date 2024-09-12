@@ -3,11 +3,9 @@ import pandas as pd
 import os
 from io import BytesIO
 from fpdf import FPDF
-import matplotlib.pyplot as plt
-import io
-import plotly.express as px
 from streamlit_option_menu import option_menu
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 # Define file paths
 CSV_PEMBAYARAN_SPP = 'data/pembayaran_spp.csv'
@@ -21,7 +19,6 @@ LOGO_PATH = 'data/HN.png'
 os.makedirs('data', exist_ok=True)
 os.makedirs(PERSISTENT_DIR, exist_ok=True)
 
-# Functions to save different types of data
 def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     df = pd.DataFrame([[nama_siswa, kelas, bulan, jumlah, biaya_spp]], columns=['nama_siswa', 'kelas', 'bulan', 'jumlah', 'biaya_spp'])
     if os.path.exists(CSV_PEMBAYARAN_SPP):
@@ -53,11 +50,9 @@ def save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya, file_path=Non
     # Save uploaded file if available
     if file_path:
         new_file_path = os.path.join(PERSISTENT_DIR, os.path.basename(file_path))
-        with open(new_file_path, "wb") as f:
-            f.write(file_path.read())
+        os.rename(file_path, new_file_path)
 
-# Function to generate receipt
-def generate_receipt(nama, kelas, bulan, jumlah, biaya, receipt_type):
+def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, receipt_type):
     pdf = FPDF()
     pdf.add_page()
     
@@ -83,11 +78,11 @@ def generate_receipt(nama, kelas, bulan, jumlah, biaya, receipt_type):
         pdf.cell(0, 10, txt="Kwitansi Pembayaran SPP", ln=True, align='C')
         pdf.ln(10)
         details = [
-            ("Nama Siswa", nama),
+            ("Nama Siswa", nama_siswa),
             ("Kelas", kelas),
             ("Bulan", bulan),
             ("Jumlah Pembayaran", f"Rp {jumlah:,}"),
-            ("Biaya SPP per Bulan", f"Rp {biaya:,}"),
+            ("Biaya SPP per Bulan", f"Rp {biaya_spp:,}"),
             ("Tanggal", datetime.now().strftime('%Y-%m-%d'))
         ]
     elif receipt_type == "daftar_ulang":
@@ -95,9 +90,9 @@ def generate_receipt(nama, kelas, bulan, jumlah, biaya, receipt_type):
         pdf.cell(0, 10, txt="Kwitansi Pembayaran Daftar Ulang", ln=True, align='C')
         pdf.ln(10)
         details = [
-            ("Nama Siswa", nama),
+            ("Nama Siswa", nama_siswa),
             ("Kelas", kelas),
-            ("Biaya Daftar Ulang", f"Rp {biaya:,}"),
+            ("Biaya Daftar Ulang", f"Rp {biaya_spp:,}"),
             ("Pembayaran", f"Rp {jumlah:,}"),
             ("Tanggal", datetime.now().strftime('%Y-%m-%d'))
         ]
@@ -106,10 +101,10 @@ def generate_receipt(nama, kelas, bulan, jumlah, biaya, receipt_type):
         pdf.cell(0, 10, txt="Kwitansi Pembayaran Gaji Guru", ln=True, align='C')
         pdf.ln(10)
         details = [
-            ("Nama Guru", nama),
+            ("Nama Guru", nama_siswa),
             ("Bulan Gaji", kelas),
             ("Gaji", f"Rp {jumlah:,}"),
-            ("Tunjangan", f"Rp {biaya:,}"),
+            ("Tunjangan", f"Rp {biaya_spp:,}"),
             ("Tanggal", datetime.now().strftime('%Y-%m-%d'))
         ]
     else:
@@ -117,7 +112,7 @@ def generate_receipt(nama, kelas, bulan, jumlah, biaya, receipt_type):
         pdf.cell(0, 10, txt="Kwitansi Pengeluaran", ln=True, align='C')
         pdf.ln(10)
         details = [
-            ("Nama Penerima", nama),
+            ("Nama Penerima", nama_siswa),
             ("Keterangan Biaya", kelas),
             ("Total Biaya", f"Rp {jumlah:,}"),
             ("Tanggal", datetime.now().strftime('%Y-%m-%d'))
@@ -140,7 +135,6 @@ def generate_receipt(nama, kelas, bulan, jumlah, biaya, receipt_type):
 def generate_expense_receipt(nama_penerima, keterangan_biaya, total_biaya):
     return generate_receipt(nama_penerima, keterangan_biaya, '', total_biaya, total_biaya, 'pengeluaran')
 
-# Load data from CSV files
 def load_data():
     df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP) if os.path.exists(CSV_PEMBAYARAN_SPP) else pd.DataFrame()
     df_gaji = pd.read_csv(CSV_GAJI_GURU) if os.path.exists(CSV_GAJI_GURU) else pd.DataFrame()
@@ -148,7 +142,6 @@ def load_data():
     df_pengeluaran = pd.read_csv(CSV_PENGELUARAN) if os.path.exists(CSV_PENGELUARAN) else pd.DataFrame()
     return df_spp, df_gaji, df_daftar_ulang, df_pengeluaran
 
-# Export data to Excel
 def export_to_excel(spp_df, gaji_df, daftar_ulang_df, pengeluaran_df):
     with BytesIO() as buffer:
         with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
@@ -160,133 +153,108 @@ def export_to_excel(spp_df, gaji_df, daftar_ulang_df, pengeluaran_df):
         buffer.seek(0)
         return buffer.getvalue()
 
-# Calculate net profit and details
-def calculate_net_profit(df_spp, df_daftar_ulang, df_gaji, df_pengeluaran):
-    total_spp = df_spp['jumlah'].sum()
-    total_daftar_ulang = df_daftar_ulang['pembayaran'].sum()
-    total_gaji = df_gaji[['gaji', 'tunjangan']].sum().sum()
-    total_pengeluaran = df_pengeluaran['total_biaya'].sum()
-    net_profit = total_spp + total_daftar_ulang - total_gaji - total_pengeluaran
-    return total_spp, total_daftar_ulang, total_gaji, total_pengeluaran, net_profit
+def plot_financial_data(df_spp, df_gaji, df_pengeluaran):
+    fig, ax = plt.subplots(2, 2, figsize=(12, 10))
 
-# Plot graphs
-def plot_graphs(df_spp, df_daftar_ulang, df_pengeluaran):
-    fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+    # Total Payments
+    total_payments = df_spp['jumlah'].sum() if not df_spp.empty else 0
+    ax[0, 0].bar(['Total Pembayaran'], [total_payments], color='blue')
+    ax[0, 0].set_title('Total Pembayaran SPP')
 
-    # Total Pembayaran SPP dan Daftar Ulang
-    ax[0].bar(['Total Pembayaran SPP', 'Total Pembayaran Daftar Ulang'], [df_spp['jumlah'].sum(), df_daftar_ulang['pembayaran'].sum()])
-    ax[0].set_ylabel('Jumlah')
-    ax[0].set_title('Total Pembayaran SPP dan Daftar Ulang')
+    # Total Salaries
+    total_salaries = df_gaji[['gaji', 'tunjangan']].sum().sum() if not df_gaji.empty else 0
+    ax[0, 1].bar(['Total Gaji dan Tunjangan'], [total_salaries], color='green')
+    ax[0, 1].set_title('Total Gaji dan Tunjangan')
 
-    # Pengeluaran
-    ax[1].bar(df_pengeluaran['keterangan_biaya'], df_pengeluaran['total_biaya'])
-    ax[1].set_ylabel('Total Biaya')
-    ax[1].set_title('Pengeluaran Berdasarkan Keterangan')
-    ax[1].tick_params(axis='x', rotation=90)
+    # Total Expenses
+    total_expenses = df_pengeluaran['total_biaya'].sum() if not df_pengeluaran.empty else 0
+    ax[1, 0].bar(['Total Pengeluaran'], [total_expenses], color='red')
+    ax[1, 0].set_title('Total Pengeluaran')
+
+    # Net Profit
+    net_profit = total_payments - total_salaries - total_expenses
+    ax[1, 1].bar(['Laba Bersih'], [net_profit], color='purple')
+    ax[1, 1].set_title('Laba Bersih')
+
+    for a in ax.flat:
+        a.grid(True)
 
     plt.tight_layout()
-    fig_output = BytesIO()
-    plt.savefig(fig_output, format='png')
-    plt.close(fig_output)
-    fig_output.seek(0)
-
-    return fig_output
+    return fig
 
 def main():
-    st.set_page_config(page_title="Aplikasi Keuangan", layout="wide")
-    
+    st.set_page_config(page_title="Sistem Keuangan", layout="wide")
+    st.title("Sistem Keuangan Sekolah")
+
     with st.sidebar:
-        selected = option_menu(
-            menu_title="Menu",
-            options=["Pembayaran SPP", "Pengelolaan Gaji Guru", "Daftar Ulang", "Pengeluaran", "Halaman Owner"],
-            icons=["cash", "person", "book", "credit-card", "file-text"],
-            default_index=0,
-            orientation="vertical"
-        )
+        selected = option_menu("Menu", ["Halaman Owner", "Laporan Bulanan"], icons=["house", "file-text"], menu_icon="cast")
 
-    df_spp, df_gaji, df_daftar_ulang, df_pengeluaran = load_data()
+    if selected == "Halaman Owner":
+        st.subheader("Laporan Keuangan Sekolah")
 
-    if selected == "Pembayaran SPP":
-        st.title("Pembayaran SPP")
-        with st.form(key='spp_form'):
-            nama_siswa = st.text_input("Nama Siswa")
-            kelas = st.text_input("Kelas")
-            bulan = st.text_input("Bulan")
-            jumlah = st.number_input("Jumlah Pembayaran", min_value=0)
-            biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0)
-            submit_button = st.form_submit_button(label='Simpan')
-            if submit_button:
-                save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
-                st.success("Data Pembayaran SPP berhasil disimpan.")
-                receipt_pdf = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, 'spp')
-                st.download_button("Download Kwitansi", receipt_pdf, file_name="kwitansi_pembayaran_spp.pdf")
-
-    elif selected == "Pengelolaan Gaji Guru":
-        st.title("Pengelolaan Gaji Guru")
-        with st.form(key='gaji_form'):
-            nama_guru = st.text_input("Nama Guru")
-            bulan_gaji = st.text_input("Bulan Gaji")
-            gaji = st.number_input("Gaji", min_value=0)
-            tunjangan = st.number_input("Tunjangan", min_value=0)
-            submit_button = st.form_submit_button(label='Simpan')
-            if submit_button:
-                save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan)
-                st.success("Data Gaji Guru berhasil disimpan.")
-                receipt_pdf = generate_receipt(nama_guru, bulan_gaji, '', gaji, tunjangan, 'gaji')
-                st.download_button("Download Kwitansi", receipt_pdf, file_name="kwitansi_pembayaran_gaji.pdf")
-
-    elif selected == "Daftar Ulang":
-        st.title("Daftar Ulang")
-        with st.form(key='daftar_ulang_form'):
-            nama_siswa = st.text_input("Nama Siswa")
-            kelas = st.text_input("Kelas")
-            biaya_daftar_ulang = st.number_input("Biaya Daftar Ulang", min_value=0)
-            pembayaran = st.number_input("Pembayaran", min_value=0)
-            tahun = st.text_input("Tahun")
-            submit_button = st.form_submit_button(label='Simpan')
-            if submit_button:
-                save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun)
-                st.success("Data Daftar Ulang berhasil disimpan.")
-                receipt_pdf = generate_receipt(nama_siswa, kelas, '', pembayaran, biaya_daftar_ulang, 'daftar_ulang')
-                st.download_button("Download Kwitansi", receipt_pdf, file_name="kwitansi_pembayaran_daftar_ulang.pdf")
-
-    elif selected == "Pengeluaran":
-        st.title("Pengeluaran")
-        with st.form(key='pengeluaran_form', clear_on_submit=True):
-            nama_penerima = st.text_input("Nama Penerima")
-            keterangan_biaya = st.text_input("Keterangan Biaya")
-            total_biaya = st.number_input("Total Biaya", min_value=0)
-            file_upload = st.file_uploader("Upload File (optional)", type=['pdf', 'jpg', 'png'])
-            submit_button = st.form_submit_button(label='Simpan')
-            if submit_button:
-                save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya, file_upload if file_upload else None)
-                st.success("Data Pengeluaran berhasil disimpan.")
-                receipt_pdf = generate_expense_receipt(nama_penerima, keterangan_biaya, total_biaya)
-                st.download_button("Download Kwitansi", receipt_pdf, file_name="kwitansi_pengeluaran.pdf")
-
-    elif selected == "Halaman Owner":
-        st.title("Halaman Owner")
-
-        # Calculate and display net profit
-        total_spp, total_daftar_ulang, total_gaji, total_pengeluaran, net_profit = calculate_net_profit(df_spp, df_daftar_ulang, df_gaji, df_pengeluaran)
-        st.write(f"**Total Pembayaran SPP:** Rp {total_spp:,}")
-        st.write(f"**Total Pembayaran Daftar Ulang:** Rp {total_daftar_ulang:,}")
-        st.write(f"**Total Gaji Guru:** Rp {total_gaji:,}")
-        st.write(f"**Total Pengeluaran:** Rp {total_pengeluaran:,}")
-        st.write(f"**Keuntungan Bersih:** Rp {net_profit:,}")
-
-        # Plot and display graphs
-        fig_output = plot_graphs(df_spp, df_daftar_ulang, df_pengeluaran)
-        st.image(fig_output, caption='Grafik Pembayaran dan Pengeluaran')
+        df_spp, df_gaji, df_daftar_ulang, df_pengeluaran = load_data()
+        
+        # Plot data
+        fig = plot_financial_data(df_spp, df_gaji, df_pengeluaran)
+        st.pyplot(fig)
 
         # Export to Excel
-        excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
-        st.download_button(
-            label="Download Laporan Excel",
-            data=excel_data,
-            file_name="laporan_keuangan.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        if st.button("Export to Excel"):
+            excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
+            st.download_button("Download Excel File", excel_data, "laporan_keuangan.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
+    elif selected == "Laporan Bulanan":
+        st.subheader("Form Laporan Bulanan")
+
+        with st.form(key='data_form'):
+            report_type = st.selectbox("Pilih Jenis Laporan", ["Pembayaran SPP", "Gaji Guru", "Daftar Ulang", "Pengeluaran"])
+            if report_type == "Pembayaran SPP":
+                nama_siswa = st.text_input("Nama Siswa")
+                kelas = st.text_input("Kelas")
+                bulan = st.text_input("Bulan")
+                jumlah = st.number_input("Jumlah Pembayaran", min_value=0)
+                biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0)
+                
+                if st.form_submit_button("Simpan Pembayaran SPP"):
+                    save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+                    st.success("Pembayaran SPP berhasil disimpan!")
+                    
+            elif report_type == "Gaji Guru":
+                nama_guru = st.text_input("Nama Guru")
+                bulan_gaji = st.text_input("Bulan Gaji")
+                gaji = st.number_input("Gaji", min_value=0)
+                tunjangan = st.number_input("Tunjangan", min_value=0)
+                
+                if st.form_submit_button("Simpan Gaji Guru"):
+                    save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan)
+                    st.success("Gaji Guru berhasil disimpan!")
+                    
+            elif report_type == "Daftar Ulang":
+                nama_siswa = st.text_input("Nama Siswa")
+                kelas = st.text_input("Kelas")
+                biaya_daftar_ulang = st.number_input("Biaya Daftar Ulang", min_value=0)
+                pembayaran = st.number_input("Pembayaran", min_value=0)
+                tahun = st.text_input("Tahun")
+                
+                if st.form_submit_button("Simpan Daftar Ulang"):
+                    save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun)
+                    st.success("Daftar Ulang berhasil disimpan!")
+                    
+            elif report_type == "Pengeluaran":
+                nama_penerima = st.text_input("Nama Penerima")
+                keterangan_biaya = st.text_input("Keterangan Biaya")
+                total_biaya = st.number_input("Total Biaya", min_value=0)
+                uploaded_file = st.file_uploader("Upload Bukti Pengeluaran (Opsional)", type=["jpg", "jpeg", "png"])
+                
+                if st.form_submit_button("Simpan Pengeluaran"):
+                    file_path = uploaded_file.name if uploaded_file else None
+                    if uploaded_file:
+                        with open(file_path, "wb") as f:
+                            f.write(uploaded_file.read())
+                    save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya, file_path)
+                    st.success("Pengeluaran berhasil disimpan!")
+                    if uploaded_file:
+                        st.image(uploaded_file, caption='Bukti Pengeluaran', use_column_width=True)
+                    
 if __name__ == "__main__":
     main()
