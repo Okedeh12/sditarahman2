@@ -54,7 +54,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     # School details
     school_name = "SD IT ARAHMAN"
     school_address = "JATIMULYO"
-    logo_url = "https://drive.google.com/uc?export=view&id=1BsQjQQALuQsx0AIZR1i490f6zxtScBt-"  # Corrected direct download URL
+    logo_url = "https://drive.google.com/uc?export=view&id=1YW-poz1paVE3G0kcwXWkqxCmwdWCACNL"  # Direct download URL
 
     # Add logo
     try:
