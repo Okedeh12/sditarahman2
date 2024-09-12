@@ -214,29 +214,30 @@ def main():
             gaji = st.number_input("Gaji", min_value=0, key="gaji_gaji")
             tunjangan = st.number_input("Tunjangan", min_value=0, key="gaji_tunjangan")
             submitted = st.form_submit_button("Simpan")
-
+    
             if submitted:
-                save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan)
+                waktu_pembayaran = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan, waktu_pembayaran)
                 df_gaji = pd.read_csv(CSV_GAJI_GURU)
                 st.success("Gaji Guru berhasil disimpan!")
-
+    
         st.write("**Data Gaji Guru**")
         search_gaji = st.text_input("Cari Guru", key="search_gaji")
         if search_gaji:
             df_gaji = df_gaji[df_gaji['nama_guru'].str.contains(search_gaji, case=False, na=False)]
         st.dataframe(df_gaji)
-
+    
         st.write("**Download Kwitansi Gaji Guru**")
         if not df_gaji.empty:
             options = list(df_gaji.index)
             selected_index = st.selectbox("Pilih Nomor Urut Kwitansi", options)
             if st.button("Download Kwitansi"):
                 row = df_gaji.loc[selected_index]
-                receipt = generate_receipt(row.get('nama_guru', ''), row.get('bulan_gaji', ''), '', row.get('gaji', 0), row.get('tunjangan', 0), 'gaji')
+                receipt = generate_receipt(row['nama_guru'], row['bulan_gaji'], '', row['gaji'], row['tunjangan'], 'gaji')
                 st.download_button(
-                    label=f"Download Kwitansi {row.get('nama_guru', '')} ({row.get('bulan_gaji', '')})",
+                    label=f"Download Kwitansi {row['nama_guru']} ({row['bulan_gaji']})",
                     data=receipt,
-                    file_name=f"kwitansi_gaji_{row.get('nama_guru', '')}_{row.get('bulan_gaji', '')}.pdf",
+                    file_name=f"kwitansi_gaji_{row['nama_guru']}_{row['bulan_gaji']}.pdf",
                     mime="application/pdf",
                     key=f"download_gaji_{selected_index}"
                 )
