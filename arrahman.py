@@ -69,7 +69,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     
     # Output to BytesIO
     pdf_output = BytesIO()
-    pdf.output(pdf_output)
+    pdf_output.write(pdf.output(dest='S').encode('latin1'))
     pdf_output.seek(0)
 
     return pdf_output
@@ -137,6 +137,16 @@ if selected == "Pembayaran SPP":
         st.subheader("Riwayat Pembayaran SPP")
         df_spp = pd.read_csv(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'))
         st.dataframe(df_spp)
+        
+        st.subheader("Unduh Kwitansi Pembayaran")
+        st.write("Pilih data pembayaran SPP untuk diunduh kwitansi.")
+        
+        selected_row = st.selectbox("Pilih Pembayaran", df_spp.index, format_func=lambda x: f"{df_spp.iloc[x]['nama_siswa']} - {df_spp.iloc[x]['bulan']}")
+        
+        if st.button("Unduh Kwitansi Terpilih"):
+            row = df_spp.iloc[selected_row]
+            pdf_receipt = generate_receipt(row['nama_siswa'], row['kelas'], row['bulan'], row['jumlah'], row['biaya_spp'])
+            st.download_button(label="Download Kwitansi Pembayaran SPP", data=pdf_receipt, file_name=f"Kwitansi_SPP_{row['nama_siswa']}_{row['bulan']}.pdf", mime='application/pdf')
 
 elif selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
