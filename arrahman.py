@@ -160,6 +160,34 @@ if selected == "Pembayaran SPP":
     st.title("Pembayaran SPP")
     st.write("Halaman untuk pembayaran SPP siswa.")
     
+# Fungsi untuk mendapatkan koneksi database
+def get_db_connection():
+    conn = sqlite3.connect('database.db')
+    return conn
+
+    # Fungsi untuk menyimpan pembayaran SPP ke database
+    def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        total_tagihan = biaya_spp * 12
+        tagihan_terbayar = jumlah
+        sisa_tagihan = total_tagihan - tagihan_terbayar
+        
+        # Simpan data pembayaran ke database
+        c.execute('''INSERT INTO pembayaran_spp 
+                     (nama_siswa, kelas, bulan, jumlah_pembayaran, total_tagihan_spp, tagihan_spp_terbayar, sisa_tagihan)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)''', 
+                  (nama_siswa, kelas, bulan, jumlah, total_tagihan, tagihan_terbayar, sisa_tagihan))
+        conn.commit()
+        conn.close()
+    
+    # Fungsi untuk generate kwitansi (contoh saja, perlu disesuaikan dengan kebutuhan)
+    def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
+        # Logika untuk menghasilkan PDF kwitansi, ini hanya contoh placeholder
+        pdf_output = f"Kwitansi Pembayaran SPP\nNama: {nama_siswa}\nKelas: {kelas}\nBulan: {bulan}\nJumlah: {jumlah}\nBiaya SPP: {biaya_spp}"
+        return pdf_output
+    
     # Cek apakah data pembayaran sudah ada di session state, jika belum ambil dari database
     if 'pembayaran_spp' not in st.session_state:
         conn = get_db_connection()
@@ -180,26 +208,28 @@ if selected == "Pembayaran SPP":
         
         submit_button = st.form_submit_button("Simpan")
         if submit_button:
+            # Simpan data pembayaran ke database
             save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             st.success("Pembayaran SPP berhasil disimpan.")
             
-            # Update the session state dataframe
+            # Update session state dataframe
             st.session_state.pembayaran_spp = st.session_state.pembayaran_spp.append({
                 "Nama Siswa": nama_siswa,
                 "Kelas": kelas,
                 "Bulan": bulan,
                 "Jumlah Pembayaran": jumlah,
-                "Biaya SPP/Bulan": biaya_spp,
                 "Total Tagihan SPP 1 Tahun": biaya_spp * 12,
                 "Tagihan SPP yang Sudah Terbayar": jumlah,
                 "Sisa Tagihan yang Belum Terbayar": (biaya_spp * 12) - jumlah
             }, ignore_index=True)
-            st.session_state.pembayaran_spp.to_csv(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'), index=False)
+            
+            # Simpan DataFrame ke CSV
+            st.session_state.pembayaran_spp.to_csv(os.path.join("TEMP_DIR", 'pembayaran_spp.csv'), index=False)
             
             # Generate and download receipt
             pdf_output = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
             st.download_button("Download Kwitansi", pdf_output, file_name="kwitansi.pdf", mime="application/pdf")
-
+            
 elif selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
     st.write("Laporan keuangan sekolah yang berisi rincian pembayaran SPP dan gaji guru.")
