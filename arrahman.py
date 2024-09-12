@@ -107,7 +107,7 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     
     # Save to a BytesIO object
     pdf_output = BytesIO()
-    pdf.output(pdf_output, 'F')
+    pdf.output(pdf_output)
     pdf_output.seek(0)  # Move to the start of the BytesIO object
 
     return pdf_output
