@@ -341,14 +341,16 @@ def main():
                     mime='application/pdf'
                 )
 
-    st.sidebar.markdown("**Upload File Kwitansi:**")
-    uploaded_file = st.sidebar.file_uploader("Pilih file kwitansi untuk diunggah", type=["pdf"])
-    
-    if uploaded_file is not None:
+        if uploaded_file is not None:
         file_path = os.path.join(PERSISTENT_DIR, uploaded_file.name)
         with open(file_path, "wb") as f:
             f.write(uploaded_file.getvalue())
         st.sidebar.success("File kwitansi berhasil diunggah!")
+
+    st.sidebar.markdown("**Upload File Kwitansi:**")
+    uploaded_file = st.sidebar.file_uploader("Pilih file kwitansi untuk diunggah", type=["pdf"])
+    
+
 
 if __name__ == "__main__":
     main()
