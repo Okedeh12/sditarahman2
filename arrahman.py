@@ -71,10 +71,11 @@ def generate_receipt(id, nama_siswa, kelas, bulan, jumlah, biaya_spp):
     
     # Output to BytesIO
     pdf_output = BytesIO()
-    pdf.output(pdf_output)
+    pdf.output(pdf_output, 'F')
     pdf_output.seek(0)
 
     return pdf_output
+
 
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
     """Save teacher salary details to CSV."""    
