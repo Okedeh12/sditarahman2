@@ -340,6 +340,24 @@ def main():
                 st.write("**Laporan Keuangan Pengeluaran**")
                 if not df_pengeluaran.empty:
                     st.write(df_pengeluaran)
+
+                # Hitung keuntungan
+                total_pendapatan = df_spp['jumlah'].sum() + df_daftar_ulang['biaya_daftar_ulang'].sum()
+                total_gaji = df_gaji['gaji'].sum()
+                total_pengeluaran = df_pengeluaran['total_biaya'].sum()
+
+                keuntungan = total_pendapatan - total_gaji - total_pengeluaran
+                st.write(f"**Keuntungan Bulanan**: {keuntungan}")
+
+                # Simpan historis keuntungan
+                bulan_tahun = datetime.now().strftime("%Y-%m")
+                save_keuntungan(bulan_tahun, total_pendapatan, total_gaji, total_pengeluaran)
+
+                # Tampilkan historis keuntungan
+                st.write("**Historis Keuntungan**")
+                if not df_keuntungan.empty:
+                    st.write(df_keuntungan[df_keuntungan['tahun_bulan'] == bulan_tahun])
+
             else:
                 st.error("Password salah! Silakan coba lagi.")
 
