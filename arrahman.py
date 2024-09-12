@@ -38,6 +38,9 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     df.to_csv(csv_path, index=False)
     return csv_path
 
+# Define the path to the logo file
+LOGO_PATH = "HN.png"  # Path to your local logo file
+
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a well-formatted payment receipt as a PDF."""
     pdf = FPDF()
@@ -46,11 +49,10 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     # School details
     school_name = "SD IT ARAHMAN"
     school_address = "JATIMULYO"
-    logo_path = "HN.png"  # Path to your local logo file
 
     # Add logo
-    if os.path.exists(logo_path):
-        pdf.image(logo_path, x=10, y=8, w=33)  # Adjust x, y, and w as needed
+    if os.path.exists(LOGO_PATH):
+        pdf.image(LOGO_PATH, x=10, y=8, w=33)  # Adjust x, y, and w as needed
     else:
         print("Logo file not found.")
 
@@ -93,6 +95,57 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     pdf_output.seek(0)
 
     return pdf_output
+
+# Streamlit App
+with st.sidebar:
+    selected = option_menu(
+        menu_title="Main Menu",
+        options=["Pembayaran SPP", "Laporan Keuangan", "Pengelolaan Gaji Guru"],
+        icons=["cash-stack", "bar-chart", "person-badge"],
+        menu_icon="cast",
+        default_index=0,
+        styles={
+            "container": {"padding": "5!important", "background-color": "#f0f2f6"},
+            "icon": {"color": "orange", "font-size": "25px"},
+            "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px", "--hover-color": "#eee"},
+            "nav-link-selected": {"background-color": "#4CAF50"},
+        }
+    )
+
+if selected == "Pembayaran SPP":
+    st.title("Pembayaran SPP")
+    st.write("Halaman untuk pembayaran SPP siswa.")
+    
+    with st.form("pembayaran_spp_form", clear_on_submit=True):
+        nama_siswa = st.text_input("Nama Siswa")
+        kelas = st.text_input("Kelas")
+        bulan = st.text_input("Bulan")
+        jumlah = st.number_input("Jumlah Pembayaran", min_value=0, step=1000)
+        biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0, step=1000)
+        submit = st.form_submit_button("Simpan Pembayaran")
+        
+        if submit:
+            if nama_siswa and kelas and bulan and jumlah > 0 and biaya_spp > 0:
+                csv_path = save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+                st.success("Pembayaran berhasil disimpan!")
+                
+                # Generate and offer receipt download
+                pdf_receipt = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp)
+                st.download_button(
+                    label="Download Kwitansi Pembayaran SPP", 
+                    data=pdf_receipt.getvalue(), 
+                    file_name=f"Kwitansi_SPP_{nama_siswa}_{bulan}.pdf", 
+                    mime='application/pdf'
+                )
+            else:
+                st.error("Semua field harus diisi!")
+    
+    # Tampilkan data pembayaran SPP
+    if os.path.exists(os.path.join(TEMP_DIR, 'pembayaran_spp.csv')):
+        st.subheader("Riwayat Pembayaran SPP")
+        df_spp = pd.read_csv(os.path.join(TEMP_DIR, 'pembayaran_spp.csv'))
+        st.dataframe(df_spp)
+
     
 def save_gaji_guru(nama_guru, bulan, gaji, tunjangan):
     """Save teacher salary details to CSV."""
