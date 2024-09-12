@@ -37,14 +37,56 @@ def save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     df.to_csv(csv_path, index=False)
     return csv_path
 
+def download_image(image_url):
+    """Download an image from a URL."""
+    response = requests.get(image_url)
+    if response.status_code == 200:
+        return BytesIO(response.content)
+    else:
+        raise Exception("Failed to download image")
+
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
     """Generate a well-formatted payment receipt as a PDF."""
     pdf = FPDF()
     pdf.add_page()
-    
+
+    # School details
+    school_name = "SD IT Arrahman"
+    school_address = "Jl. Jatimulyo"
+    logo_url = "def download_image(image_url):
+    """Download an image from a URL."""
+    response = requests.get(image_url)
+    if response.status_code == 200:
+        return BytesIO(response.content)
+    else:
+        raise Exception("Failed to download image")
+
+def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
+    """Generate a well-formatted payment receipt as a PDF."""
+    pdf = FPDF()
+    pdf.add_page()
+
+    # School details
+    school_name = "Sekolah Dasar Arrahman"
+    school_address = "Jl. Pendidikan No. 12, Jakarta"
+    logo_url = "https://drive.google.com/file/d/1BsQjQQALuQsx0AIZR1i490f6zxtScBt-/view?usp=sharing"  # Replace with your actual logo URL
+
+    # Add logo
+    try:
+        logo_image = download_image(logo_url)
+        pdf.image(logo_image, x = 10, y = 8, w = 33)  # Adjust x, y, and w as needed
+    except Exception as e:
+        print(f"Error loading logo: {e}")
+
     # Title section
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="Kwitansi Pembayaran SPP", ln=True, align='C')
+    pdf.cell(0, 10, txt=school_name, ln=True, align='C')
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, txt=school_address, ln=True, align='C')
+    pdf.ln(10)
+    
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, txt="Kwitansi Pembayaran SPP", ln=True, align='C')
     pdf.ln(10)
     
     # Detail section
@@ -56,20 +98,69 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp):
         ("Jumlah Pembayaran", f"Rp {jumlah:,}"),
         ("Biaya SPP per Bulan", f"Rp {biaya_spp:,}"),
         ("Total Tagihan SPP 1 Tahun", f"Rp {biaya_spp * 12:,}"),
+        ("Tagihan Sudah Terbayar", f"Rp {jumlah:,}"),
+        ("Sisa Tagihan Belum Terbayar", f"Rp {biaya_spp * 12 - jumlah:,}"),
         ("Tanggal", datetime.now().strftime('%Y-%m-%d'))
     ]
     
     for label, value in details:
         pdf.cell(100, 10, txt=label, border=1)
-        pdf.cell(100, 10, txt=f": {value}", border=1, ln=True)
+        pdf.cell(90, 10, txt=f": {value}", border=1, ln=True)
     
     # Signature section
     pdf.ln(10)
-    pdf.cell(200, 10, txt="Tanda Terima", ln=True, align='R')
+    pdf.cell(0, 10, txt="Tanda Terima", ln=True, align='R')
     
     # Output to BytesIO
     pdf_output = BytesIO()
-    pdf_output.write(pdf.output(dest='S').encode('latin1'))
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
+
+    return pdf_output"  # Replace with your actual logo URL
+
+    # Add logo
+    try:
+        logo_image = download_image(logo_url)
+        pdf.image(logo_image, x = 10, y = 8, w = 33)  # Adjust x, y, and w as needed
+    except Exception as e:
+        print(f"Error loading logo: {e}")
+
+    # Title section
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, txt=school_name, ln=True, align='C')
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, txt=school_address, ln=True, align='C')
+    pdf.ln(10)
+    
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, txt="Kwitansi Pembayaran SPP", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Detail section
+    pdf.set_font("Arial", size=12)
+    details = [
+        ("Nama Siswa", nama_siswa),
+        ("Kelas", kelas),
+        ("Bulan", bulan),
+        ("Jumlah Pembayaran", f"Rp {jumlah:,}"),
+        ("Biaya SPP per Bulan", f"Rp {biaya_spp:,}"),
+        ("Total Tagihan SPP 1 Tahun", f"Rp {biaya_spp * 12:,}"),
+        ("Tagihan Sudah Terbayar", f"Rp {jumlah:,}"),
+        ("Sisa Tagihan Belum Terbayar", f"Rp {biaya_spp * 12 - jumlah:,}"),
+        ("Tanggal", datetime.now().strftime('%Y-%m-%d'))
+    ]
+    
+    for label, value in details:
+        pdf.cell(100, 10, txt=label, border=1)
+        pdf.cell(90, 10, txt=f": {value}", border=1, ln=True)
+    
+    # Signature section
+    pdf.ln(10)
+    pdf.cell(0, 10, txt="Tanda Terima", ln=True, align='R')
+    
+    # Output to BytesIO
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
     pdf_output.seek(0)
 
     return pdf_output
