@@ -318,6 +318,41 @@ def main():
                     key=f"download_pengeluaran_{selected_index}"
                 )
 
+def calculate_financial_summary(df_spp, df_gaji, df_pengeluaran):
+    # Calculate total income from SPP payments
+    total_income = df_spp['jumlah'].sum() if not df_spp.empty else 0
+    
+    # Calculate total expenses from salary payments
+    total_salaries = df_gaji[['gaji', 'tunjangan']].sum().sum() if not df_gaji.empty else 0
+    
+    # Calculate total expenses from other expenditures
+    total_expenditures = df_pengeluaran['total_biaya'].sum() if not df_pengeluaran.empty else 0
+    
+    # Calculate net profit
+    net_profit = total_income - (total_salaries + total_expenditures)
+    
+    return total_income, total_salaries, total_expenditures, net_profit
+
+def main():
+    df_spp, df_gaji, df_daftar_ulang, df_pengeluaran = load_data()
+
+    with st.sidebar:
+        selected = option_menu(
+            menu_title="Main Menu",
+            options=["Pembayaran SPP", "Pengelolaan Gaji Guru", "Daftar Ulang", "Pengeluaran", "Laporan Keuangan"],
+            icons=["cash", "bar-chart", "person-badge", "clipboard-check", "money"],
+            menu_icon="cast",
+            default_index=0,
+            styles={
+                "container": {"padding": "5!important", "background-color": "#f0f2f6"},
+                "icon": {"color": "orange", "font-size": "25px"},
+                "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px", "--hover-color": "#eee"},
+                "nav-link-selected": {"background-color": "#ff6f61"},
+            }
+        )
+
+    # Existing sections...
+
     elif selected == "Laporan Keuangan":
         st.title("Laporan Keuangan")
         
@@ -333,6 +368,15 @@ def main():
 
         st.write("**Laporan Pengeluaran**")
         st.dataframe(df_pengeluaran)
+
+        # Calculate and display financial summary
+        total_income, total_salaries, total_expenditures, net_profit = calculate_financial_summary(df_spp, df_gaji, df_pengeluaran)
+        
+        st.write("**Rincian Keuangan**")
+        st.write(f"Total Pendapatan dari Pembayaran SPP: Rp {total_income:,.0f}")
+        st.write(f"Total Pengeluaran untuk Gaji Guru: Rp {total_salaries:,.0f}")
+        st.write(f"Total Pengeluaran Lainnya: Rp {total_expenditures:,.0f}")
+        st.write(f"Keuntungan Bersih: Rp {net_profit:,.0f}")
 
         # Export to Excel
         excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
