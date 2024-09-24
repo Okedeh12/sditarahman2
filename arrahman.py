@@ -421,7 +421,7 @@ if selected == "Laporan Keuangan":
         st.warning("Kolom 'SPP Per Bulan' atau 'Jumlah Bayar' tidak ditemukan dalam data SPP.")
 
     # Display the updated DataFrame with the new columns
-    st.dataframe(df_spp)
+    st.dataframe(df_spp[['SPP Per Bulan', 'Jumlah Bayar', 'Total Tagihan SPP (1 Tahun)', 'Sisa Tagihan SPP (1 Tahun)']])
 
     st.write("**Laporan Gaji Guru**")
     st.dataframe(df_gaji)
@@ -442,10 +442,6 @@ if selected == "Laporan Keuangan":
 
     st.write("**Tabel Historis Pengeluaran**")
     st.dataframe(historical_expenditures)
-
-    # Optional: Display specific columns for clarity
-    st.write("**Detail SPP yang Dihitung**")
-    st.dataframe(df_spp[['SPP Per Bulan', 'Jumlah Bayar', 'Total Tagihan SPP (1 Tahun)', 'Sisa Tagihan SPP (1 Tahun)']])
 
         # Export to Excel
         excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
