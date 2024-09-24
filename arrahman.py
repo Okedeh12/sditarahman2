@@ -5,7 +5,6 @@ from io import BytesIO
 from fpdf import FPDF
 from streamlit_option_menu import option_menu
 from datetime import datetime
-import matplotlib
 
 # Define CSV file paths
 CSV_PEMBAYARAN_SPP = 'data/pembayaran_spp.csv'
@@ -13,17 +12,11 @@ CSV_GAJI_GURU = 'data/gaji_guru.csv'
 CSV_DAFTAR_ULANG = 'data/daftar_ulang.csv'
 CSV_PENGELUARAN = 'data/pengeluaran.csv'
 PERSISTENT_DIR = 'data/uploads'
-LOGO_PATH = 'data/lv.jpeg'
+LOGO_PATH = 'data/HN.png'  # Path to your logo file
 
 # Ensure data directories exist
 os.makedirs('data', exist_ok=True)
 os.makedirs(PERSISTENT_DIR, exist_ok=True)
-
-# Load CSV files
-CSV_PEMBAYARAN_SPP = 'path_to_spp.csv'
-CSV_GAJI_GURU = 'path_to_gaji_guru.csv'
-CSV_DAFTAR_ULANG = 'path_to_daftar_ulang.csv'
-CSV_PENGELUARAN = 'path_to_pengeluaran.csv'
 
 def load_data():
     df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP) if os.path.exists(CSV_PEMBAYARAN_SPP) else pd.DataFrame()
@@ -41,24 +34,6 @@ def export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran):
             df_pengeluaran.to_excel(writer, sheet_name='Pengeluaran', index=False)
         return buffer.getvalue()
 
-def calculate_monthly_income(df_spp):
-    df_spp['tanggal_pembayaran'] = pd.to_datetime(df_spp['tanggal_pembayaran'])
-    df_spp['month'] = df_spp['tanggal_pembayaran'].dt.to_period('M')
-    monthly_income = df_spp.groupby('month')['jumlah'].sum().reset_index()
-    monthly_income.columns = ['Bulan', 'Total Pendapatan']
-    return monthly_income
-
-def calculate_historical_income(df_spp):
-    df_spp['tanggal_pembayaran'] = pd.to_datetime(df_spp['tanggal_pembayaran'])
-    df_spp['month'] = df_spp['tanggal_pembayaran'].dt.to_period('M')
-    historical_income = df_spp.groupby('month')['jumlah'].sum().reset_index()
-    historical_income.columns = ['Bulan', 'Total Pendapatan']
-    return historical_income
-
-def main():
-    df_spp, df_gaji, df_daftar_ulang, df_pengeluaran = load_data()
-
-# Helper function to get current timestamp
 def get_current_timestamp():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -122,7 +97,6 @@ def save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya, timestamp):
     else:
         df_pengeluaran = new_data
     df_pengeluaran.to_csv(CSV_PENGELUARAN, index=False)
-
 
 def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, receipt_type):
     pdf = FPDF()
@@ -204,229 +178,9 @@ def generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, receipt_type):
 
     return pdf_output
 
-def generate_expense_receipt(nama_penerima, keterangan_biaya, total_biaya):
-    return generate_receipt(nama_penerima, keterangan_biaya, '', total_biaya, total_biaya, 'pengeluaran')
-
-def load_data():
-    df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP) if os.path.exists(CSV_PEMBAYARAN_SPP) else pd.DataFrame()
-    df_gaji = pd.read_csv(CSV_GAJI_GURU) if os.path.exists(CSV_GAJI_GURU) else pd.DataFrame()
-    df_daftar_ulang = pd.read_csv(CSV_DAFTAR_ULANG) if os.path.exists(CSV_DAFTAR_ULANG) else pd.DataFrame()
-    df_pengeluaran = pd.read_csv(CSV_PENGELUARAN) if os.path.exists(CSV_PENGELUARAN) else pd.DataFrame()
-    return df_spp, df_gaji, df_daftar_ulang, df_pengeluaran
-
-def export_to_excel(spp_df, gaji_df, daftar_ulang_df, pengeluaran_df):
-    with BytesIO() as buffer:
-        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-            spp_df.to_excel(writer, sheet_name='Pembayaran SPP', index=False)
-            gaji_df.to_excel(writer, sheet_name='Gaji Guru', index=False)
-            daftar_ulang_df.to_excel(writer, sheet_name='Daftar Ulang', index=False)
-            pengeluaran_df.to_excel(writer, sheet_name='Pengeluaran', index=False)
-        
-        buffer.seek(0)
-        return buffer.getvalue()
-
-def main():
-    df_spp, df_gaji, df_daftar_ulang, df_pengeluaran = load_data()
-
-    with st.sidebar:
-        selected = option_menu(
-            menu_title="SD IT AR RAHMAN",
-            options=["Pembayaran SPP", "Pengelolaan Gaji Guru", "Daftar Ulang", "Pengeluaran", "Laporan Keuangan"],
-            icons=["cash", "bar-chart", "person-badge", "clipboard-check", "money"],
-            menu_icon="cast",
-            default_index=0,
-            styles={
-                "container": {"padding": "5!important", "background-color": "#f0f2f6"},
-                "icon": {"color": "orange", "font-size": "25px"},
-                "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px", "--hover-color": "#eee"},
-                "nav-link-selected": {"background-color": "#ff6f61"},
-            }
-        )
-
-    if selected == "Pembayaran SPP":
-        st.title("Pembayaran SPP")
-        with st.form("spp_form"):
-            nama_siswa = st.text_input("Nama Siswa", key="spp_nama_siswa")
-            kelas = st.text_input("Kelas", key="spp_kelas")
-            bulan = st.text_input("Bulan", key="spp_bulan")
-            jumlah = st.number_input("Jumlah Pembayaran", min_value=0, key="spp_jumlah")
-            biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0, key="spp_biaya_spp")
-            timestamp = get_current_timestamp()
-            submitted = st.form_submit_button("Simpan")
-
-            if submitted:
-                save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp, timestamp)
-                df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP)
-                st.success("Pembayaran SPP berhasil disimpan!")
-
-        st.write("**Data Pembayaran SPP**")
-        search_spp = st.text_input("Cari Siswa", key="search_spp")
-        if os.path.exists(CSV_PEMBAYARAN_SPP):
-            df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP)
-            if search_spp:
-                df_spp = df_spp[df_spp['nama_siswa'].str.contains(search_spp, case=False, na=False)]
-            st.dataframe(df_spp)
-
-        st.write("**Download Kwitansi Pembayaran SPP**")
-        if not df_spp.empty:
-            options = list(df_spp.index)
-            selected_index = st.selectbox("Pilih Nomor Urut Kwitansi", options)
-            if st.button("Download Kwitansi"):
-                row = df_spp.loc[selected_index]
-                receipt = generate_receipt(row.get('nama_siswa', ''), row.get('kelas', ''), row.get('bulan', ''), row.get('jumlah', 0), row.get('biaya_spp', 0), 'spp')
-                st.download_button(
-                    label=f"Download Kwitansi {row.get('nama_siswa', '')} ({row.get('bulan', '')})",
-                    data=receipt,
-                    file_name=f"kwitansi_spp_{row.get('nama_siswa', '')}_{row.get('bulan', '')}.pdf",
-                    mime="application/pdf",
-                    key=f"download_spp_{selected_index}"
-                )
-
-    elif selected == "Pengelolaan Gaji Guru":
-        st.title("Pengelolaan Gaji Guru")
-        with st.form("gaji_form"):
-            nama_guru = st.text_input("Nama Guru", key="gaji_nama_guru")
-            bulan_gaji = st.text_input("Bulan Gaji", key="gaji_bulan_gaji")
-            gaji = st.number_input("Gaji", min_value=0, key="gaji_gaji")
-            tunjangan = st.number_input("Tunjangan", min_value=0, key="gaji_tunjangan")
-            timestamp = get_current_timestamp()
-            submitted = st.form_submit_button("Simpan")
-
-            if submitted:
-                save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan, timestamp)
-                df_gaji = pd.read_csv(CSV_GAJI_GURU)
-                st.success("Gaji Guru berhasil disimpan!")
-
-        st.write("**Data Gaji Guru**")
-        search_gaji = st.text_input("Cari Guru", key="search_gaji")
-        if os.path.exists(CSV_GAJI_GURU):
-            df_gaji = pd.read_csv(CSV_GAJI_GURU)
-            if search_gaji:
-                df_gaji = df_gaji[df_gaji['nama_guru'].str.contains(search_gaji, case=False, na=False)]
-            st.dataframe(df_gaji)
-
-        st.write("**Download Kwitansi Gaji Guru**")
-        if not df_gaji.empty:
-            options = list(df_gaji.index)
-            selected_index = st.selectbox("Pilih Nomor Urut Kwitansi", options)
-            if st.button("Download Kwitansi"):
-                row = df_gaji.loc[selected_index]
-                receipt = generate_receipt(row.get('nama_guru', ''), row.get('bulan_gaji', ''), '', row.get('gaji', 0), row.get('tunjangan', 0), 'gaji')
-                st.download_button(
-                    label=f"Download Kwitansi {row.get('nama_guru', '')} ({row.get('bulan_gaji', '')})",
-                    data=receipt,
-                    file_name=f"kwitansi_gaji_{row.get('nama_guru', '')}_{row.get('bulan_gaji', '')}.pdf",
-                    mime="application/pdf",
-                    key=f"download_gaji_{selected_index}"
-                )
-
-    elif selected == "Daftar Ulang":
-        st.title("Daftar Ulang")
-        with st.form("daftar_ulang_form"):
-            nama_siswa = st.text_input("Nama Siswa", key="daftar_ulang_nama_siswa")
-            kelas = st.text_input("Kelas", key="daftar_ulang_kelas")
-            biaya_daftar_ulang = st.number_input("Biaya Daftar Ulang", min_value=0, key="daftar_ulang_biaya_daftar_ulang")
-            pembayaran = st.number_input("Pembayaran", min_value=0, key="daftar_ulang_pembayaran")
-            tahun = st.text_input("Tahun", key="daftar_ulang_tahun")
-            timestamp = get_current_timestamp()
-            submitted = st.form_submit_button("Simpan")
-
-            if submitted:
-                save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun, timestamp)
-                df_daftar_ulang = pd.read_csv(CSV_DAFTAR_ULANG)
-                st.success("Pembayaran Daftar Ulang berhasil disimpan!")
-
-        st.write("**Data Daftar Ulang**")
-        search_daftar_ulang = st.text_input("Cari Siswa", key="search_daftar_ulang")
-        if os.path.exists(CSV_DAFTAR_ULANG):
-            df_daftar_ulang = pd.read_csv(CSV_DAFTAR_ULANG)
-            if search_daftar_ulang:
-                df_daftar_ulang = df_daftar_ulang[df_daftar_ulang['nama_siswa'].str.contains(search_daftar_ulang, case=False, na=False)]
-            st.dataframe(df_daftar_ulang)
-
-        st.write("**Download Kwitansi Daftar Ulang**")
-        if not df_daftar_ulang.empty:
-            options = list(df_daftar_ulang.index)
-            selected_index = st.selectbox("Pilih Nomor Urut Kwitansi", options)
-            if st.button("Download Kwitansi"):
-                row = df_daftar_ulang.loc[selected_index]
-                receipt = generate_receipt(row.get('nama_siswa', ''), row.get('kelas', ''), '', row.get('pembayaran', 0), row.get('biaya_daftar_ulang', 0), 'daftar_ulang')
-                st.download_button(
-                    label=f"Download Kwitansi {row.get('nama_siswa', '')} ({row.get('tahun', '')})",
-                    data=receipt,
-                    file_name=f"kwitansi_daftar_ulang_{row.get('nama_siswa', '')}_{row.get('tahun', '')}.pdf",
-                    mime="application/pdf",
-                    key=f"download_daftar_ulang_{selected_index}"
-                )
-
-    elif selected == "Pengeluaran":
-        st.title("Pengelolaan Pengeluaran")
-
-        with st.form("pengeluaran_form"):
-            nama_penerima = st.text_input("Nama Penerima", key="pengeluaran_nama_penerima")
-            keterangan_biaya = st.text_input("Keterangan Biaya", key="pengeluaran_keterangan_biaya")
-            total_biaya = st.number_input("Total Biaya", min_value=0, key="pengeluaran_total_biaya")
-            timestamp = get_current_timestamp()
-            submitted = st.form_submit_button("Simpan")
-
-            if submitted:
-                save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya, timestamp)
-                st.success("Pengeluaran berhasil disimpan!")
-
-        st.write("**Data Pengeluaran**")
-        if os.path.exists(CSV_PENGELUARAN):
-            df_pengeluaran = pd.read_csv(CSV_PENGELUARAN)
-            search_pengeluaran = st.text_input("Cari Penerima", key="search_pengeluaran")
-            if search_pengeluaran:
-                df_pengeluaran = df_pengeluaran[df_pengeluaran['nama_penerima'].str.contains(search_pengeluaran, case=False, na=False)]
-            st.dataframe(df_pengeluaran)
-
-            st.write("**Download Kwitansi Pengeluaran**")
-            if not df_pengeluaran.empty:
-                options = list(df_pengeluaran.index)
-                selected_index = st.selectbox("Pilih Nomor Urut Kwitansi", options)
-                if st.button("Download Kwitansi"):
-                    row = df_pengeluaran.loc[selected_index]
-                    receipt = generate_expense_receipt(
-                        row.get('nama_penerima', ''),
-                        row.get('keterangan_biaya', ''),
-                        row.get('total_biaya', 0)
-                    )
-                    st.download_button(
-                        label=f"Download Kwitansi {row.get('nama_penerima', '')}",
-                        data=receipt,
-                        file_name=f"kwitansi_pengeluaran_{row.get('nama_penerima', '')}.pdf",
-                        mime="application/pdf",
-                        key=f"download_pengeluaran_{selected_index}"
-                    )
-        else:
-            st.write("Belum ada data pengeluaran.")
-
-    elif selected == "Laporan Keuangan":
-        st.title("Laporan Keuangan")
-        
-        # Display dataframes
-        st.write("**Laporan Pembayaran SPP**")
-        st.dataframe(df_spp)
-
-        st.write("**Laporan Gaji Guru**")
-        st.dataframe(df_gaji)
-
-        st.write("**Laporan Daftar Ulang**")
-        st.dataframe(df_daftar_ulang)
-
-        st.write("**Laporan Pengeluaran**")
-        st.dataframe(df_pengeluaran)
-
-        # Export to Excel
-        excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
-        st.download_button(
-            label="Download Excel File",
-            data=excel_data,
-            file_name="laporan_keuangan.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_excel"
-        )
+def generate_report(df, report_title):
+    st.title(report_title)
+    st.write(df)
 
 def main():
     df_spp, df_gaji, df_daftar_ulang, df_pengeluaran = load_data()
@@ -451,5 +205,82 @@ def main():
                 "nav-link-selected": {"background-color": "#ff6f61"},
             }
         )
+
+    if selected == "Pembayaran SPP":
+        st.header("Pembayaran SPP")
+        # Form for SPP payment
+        with st.form("spp_form"):
+            nama_siswa = st.text_input("Nama Siswa")
+            kelas = st.text_input("Kelas")
+            bulan = st.text_input("Bulan")
+            jumlah = st.number_input("Jumlah Pembayaran", min_value=0)
+            biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0)
+            submitted = st.form_submit_button("Simpan")
+            if submitted:
+                timestamp = get_current_timestamp()
+                save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp, timestamp)
+                st.success("Data Pembayaran SPP berhasil disimpan.")
+                pdf_output = generate_receipt(nama_siswa, kelas, bulan, jumlah, biaya_spp, "spp")
+                st.download_button("Download Kwitansi", pdf_output, "kwitansi_spp.pdf", "application/pdf")
+
+    elif selected == "Pengelolaan Gaji Guru":
+        st.header("Pengelolaan Gaji Guru")
+        # Form for teacher salary management
+        with st.form("gaji_form"):
+            nama_guru = st.text_input("Nama Guru")
+            bulan_gaji = st.text_input("Bulan Gaji")
+            gaji = st.number_input("Gaji", min_value=0)
+            tunjangan = st.number_input("Tunjangan", min_value=0)
+            submitted = st.form_submit_button("Simpan")
+            if submitted:
+                timestamp = get_current_timestamp()
+                save_gaji_guru(nama_guru, bulan_gaji, gaji, tunjangan, timestamp)
+                st.success("Data Gaji Guru berhasil disimpan.")
+                pdf_output = generate_receipt(nama_guru, bulan_gaji, gaji, tunjangan, gaji + tunjangan, "gaji")
+                st.download_button("Download Kwitansi", pdf_output, "kwitansi_gaji.pdf", "application/pdf")
+
+    elif selected == "Daftar Ulang":
+        st.header("Daftar Ulang")
+        # Form for re-registration
+        with st.form("daftar_ulang_form"):
+            nama_siswa = st.text_input("Nama Siswa")
+            kelas = st.text_input("Kelas")
+            biaya_daftar_ulang = st.number_input("Biaya Daftar Ulang", min_value=0)
+            pembayaran = st.number_input("Pembayaran", min_value=0)
+            tahun = st.text_input("Tahun")
+            submitted = st.form_submit_button("Simpan")
+            if submitted:
+                timestamp = get_current_timestamp()
+                save_daftar_ulang(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, tahun, timestamp)
+                st.success("Data Daftar Ulang berhasil disimpan.")
+                pdf_output = generate_receipt(nama_siswa, kelas, biaya_daftar_ulang, pembayaran, biaya_daftar_ulang, "daftar_ulang")
+                st.download_button("Download Kwitansi", pdf_output, "kwitansi_daftar_ulang.pdf", "application/pdf")
+
+    elif selected == "Pengeluaran":
+        st.header("Pengeluaran")
+        # Form for expenses
+        with st.form("pengeluaran_form"):
+            nama_penerima = st.text_input("Nama Penerima")
+            keterangan_biaya = st.text_input("Keterangan Biaya")
+            total_biaya = st.number_input("Total Biaya", min_value=0)
+            submitted = st.form_submit_button("Simpan")
+            if submitted:
+                timestamp = get_current_timestamp()
+                save_pengeluaran(nama_penerima, keterangan_biaya, total_biaya, timestamp)
+                st.success("Data Pengeluaran berhasil disimpan.")
+                pdf_output = generate_receipt(nama_penerima, keterangan_biaya, total_biaya, total_biaya, total_biaya, "pengeluaran")
+                st.download_button("Download Kwitansi", pdf_output, "kwitansi_pengeluaran.pdf", "application/pdf")
+
+    elif selected == "Laporan Keuangan":
+        st.header("Laporan Keuangan")
+        st.subheader("Pembayaran SPP")
+        generate_report(df_spp, "Laporan Pembayaran SPP")
+        st.subheader("Pengelolaan Gaji Guru")
+        generate_report(df_gaji, "Laporan Gaji Guru")
+        st.subheader("Daftar Ulang")
+        generate_report(df_daftar_ulang, "Laporan Daftar Ulang")
+        st.subheader("Pengeluaran")
+        generate_report(df_pengeluaran, "Laporan Pengeluaran")
+
 if __name__ == "__main__":
     main()
