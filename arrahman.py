@@ -402,18 +402,29 @@ def main():
         else:
             st.write("Belum ada data pengeluaran.")
 
+import streamlit as st
+import pandas as pd
+
+# Sample DataFrames (replace with your actual data)
+# df_spp = pd.DataFrame({...})  # Your SPP data
+# df_gaji = pd.DataFrame({...})  # Your salary data
+# df_pengeluaran = pd.DataFrame({...})  # Your expenditure data
+# historical_salaries = pd.DataFrame({...})  # Your historical salaries
+# historical_expenditures = pd.DataFrame({...})  # Your historical expenditures
+
 # Streamlit app logic
 if selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
     
     st.write("**Laporan Pembayaran SPP**")
-    
-    # Ensure that there are no NaN values
+
+    # Ensure that 'SPP Per Bulan' and 'Jumlah Bayar' exist
     if 'SPP Per Bulan' in df_spp.columns and 'Jumlah Bayar' in df_spp.columns:
+        # Fill NaN values with 0
         df_spp['SPP Per Bulan'] = df_spp['SPP Per Bulan'].fillna(0)
         df_spp['Jumlah Bayar'] = df_spp['Jumlah Bayar'].fillna(0)
 
-        # SPP calculations
+        # Calculate Total Tagihan SPP (1 Tahun) and Sisa Tagihan SPP
         df_spp['Total Tagihan SPP (1 Tahun)'] = df_spp['SPP Per Bulan'] * 12
         df_spp['Sisa Tagihan SPP'] = df_spp['Total Tagihan SPP (1 Tahun)'] - df_spp['Jumlah Bayar']
     else:
@@ -447,6 +458,8 @@ if selected == "Laporan Keuangan":
         st.write("**Detail SPP yang Dihitung**")
         st.dataframe(df_spp[['SPP Per Bulan', 'Jumlah Bayar', 'Total Tagihan SPP (1 Tahun)', 'Sisa Tagihan SPP']])
     else:
+        st.warning("Kolom 'Total Tagihan SPP (1 Tahun)' atau 'Sisa Tagihan SPP' tidak tersedia.")
+
 
         # Export to Excel
         excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
