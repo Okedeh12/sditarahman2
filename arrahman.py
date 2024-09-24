@@ -243,7 +243,6 @@ def main():
             }
         )
 
-        # Streamlit app logic for Pembayaran SPP
     if selected == "Pembayaran SPP":
         st.title("Pembayaran SPP")
         with st.form("spp_form"):
@@ -254,24 +253,20 @@ def main():
             biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0, key="spp_biaya_spp")
             timestamp = get_current_timestamp()
             submitted = st.form_submit_button("Simpan")
-    
+
             if submitted:
                 save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp, timestamp)
+                df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP)
                 st.success("Pembayaran SPP berhasil disimpan!")
-    
+
         st.write("**Data Pembayaran SPP**")
         search_spp = st.text_input("Cari Siswa", key="search_spp")
         if os.path.exists(CSV_PEMBAYARAN_SPP):
             df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP)
-    
-            # Calculate Total SPP (1 Tahun) and Sisa SPP (1 Tahun)
-            df_spp['Total Tagihan SPP (1 Tahun)'] = df_spp['biaya_spp'] * 12
-            df_spp['Sisa Tagihan SPP (1 Tahun)'] = df_spp['Total Tagihan SPP (1 Tahun)'] - df_spp['jumlah']
-    
             if search_spp:
                 df_spp = df_spp[df_spp['nama_siswa'].str.contains(search_spp, case=False, na=False)]
             st.dataframe(df_spp)
-            
+
         st.write("**Download Kwitansi Pembayaran SPP**")
         if not df_spp.empty:
             options = list(df_spp.index)
@@ -407,46 +402,21 @@ def main():
         else:
             st.write("Belum ada data pengeluaran.")
 
-# Streamlit app logic
-if selected == "Laporan Keuangan":
-    st.title("Laporan Keuangan")
-    
-    st.write("**Laporan Pembayaran SPP**")
+    elif selected == "Laporan Keuangan":
+        st.title("Laporan Keuangan")
+        
+        # Display dataframes
+        st.write("**Laporan Pembayaran SPP**")
+        st.dataframe(df_spp)
 
-    # Ensure that 'SPP Per Bulan' and 'Jumlah Bayar' exist
-    if 'SPP Per Bulan' in df_spp.columns and 'Jumlah Bayar' in df_spp.columns:
-        # Fill NaN values with 0
-        df_spp['SPP Per Bulan'] = df_spp['SPP Per Bulan'].fillna(0)
-        df_spp['Jumlah Bayar'] = df_spp['Jumlah Bayar'].fillna(0)
+        st.write("**Laporan Gaji Guru**")
+        st.dataframe(df_gaji)
 
-        # Calculate Total Tagihan SPP (1 Tahun) and Sisa Tagihan SPP
-        df_spp['Total Tagihan SPP (1 Tahun)'] = df_spp['SPP Per Bulan'] * 12
-        df_spp['Sisa Tagihan SPP (1 Tahun)'] = df_spp['Total Tagihan SPP (1 Tahun)'] - df_spp['Jumlah Bayar']
-    else:
-        st.warning("Kolom 'SPP Per Bulan' atau 'Jumlah Bayar' tidak ditemukan dalam data SPP.")
+        st.write("**Laporan Daftar Ulang**")
+        st.dataframe(df_daftar_ulang)
 
-    # Display the updated DataFrame with the new columns
-    st.dataframe(df_spp[['SPP Per Bulan', 'Jumlah Bayar', 'Total Tagihan SPP (1 Tahun)', 'Sisa Tagihan SPP (1 Tahun)']])
-
-    st.write("**Laporan Gaji Guru**")
-    st.dataframe(df_gaji)
-    
-    st.write("**Total Gaji Guru (1 Bulan)**")
-    total_gaji = df_gaji['Total Gaji (1 Bulan)'].sum()
-    st.write(f"Total Gaji Guru (1 Bulan): {total_gaji}")
-
-    st.write("**Tabel Historis Gaji Guru**")
-    st.dataframe(historical_salaries)
-
-    st.write("**Laporan Pengeluaran**")
-    st.dataframe(df_pengeluaran)
-    
-    st.write("**Total Pengeluaran (1 Bulan)**")
-    total_pengeluaran = df_pengeluaran['Total Pengeluaran (1 Bulan)'].sum()
-    st.write(f"Total Pengeluaran (1 Bulan): {total_pengeluaran}")
-
-    st.write("**Tabel Historis Pengeluaran**")
-    st.dataframe(historical_expenditures)
+        st.write("**Laporan Pengeluaran**")
+        st.dataframe(df_pengeluaran)
 
         # Export to Excel
         excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
