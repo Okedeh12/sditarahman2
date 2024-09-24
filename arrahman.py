@@ -428,5 +428,28 @@ def main():
             key="download_excel"
         )
 
+def main():
+    df_spp, df_gaji, df_daftar_ulang, df_pengeluaran = load_data()
+
+    # Display logo above the menu
+    if os.path.exists(LOGO_PATH):
+        st.sidebar.image(LOGO_PATH, use_column_width=True)
+    else:
+        st.sidebar.write("Logo Tidak Ditemukan")
+
+    with st.sidebar:
+        selected = option_menu(
+            menu_title="SD IT AR RAHMAN",
+            options=["Pembayaran SPP", "Pengelolaan Gaji Guru", "Daftar Ulang", "Pengeluaran", "Laporan Keuangan"],
+            icons=["cash", "bar-chart", "person-badge", "clipboard-check", "money"],
+            menu_icon="cast",
+            default_index=0,
+            styles={
+                "container": {"padding": "5!important", "background-color": "#f0f2f6"},
+                "icon": {"color": "orange", "font-size": "25px"},
+                "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px", "--hover-color": "#eee"},
+                "nav-link-selected": {"background-color": "#ff6f61"},
+            }
+        )
 if __name__ == "__main__":
     main()
