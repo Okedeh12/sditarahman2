@@ -402,21 +402,37 @@ def main():
         else:
             st.write("Belum ada data pengeluaran.")
 
-    elif selected == "Laporan Keuangan":
-        st.title("Laporan Keuangan")
-        
-        # Display dataframes
-        st.write("**Laporan Pembayaran SPP**")
-        st.dataframe(df_spp)
+# Streamlit app logic
+elif selected == "Laporan Keuangan":
+    st.title("Laporan Keuangan")
+    
+    st.write("**Laporan Pembayaran SPP**")
+    
+    # SPP calculations
+    df_spp['Total Tagihan SPP (1 Tahun)'] = df_spp['SPP Per Bulan'] * 12
+    df_spp['Sisa Tagihan SPP'] = df_spp['Total Tagihan SPP (1 Tahun)'] - df_spp['Jumlah Bayar']
+    st.dataframe(df_spp)
 
-        st.write("**Laporan Gaji Guru**")
-        st.dataframe(df_gaji)
+    st.write("**Laporan Gaji Guru**")
+    st.dataframe(df_gaji)
+    
+    st.write("**Total Gaji Guru (1 Bulan)**")
+    total_gaji = df_gaji['Total Gaji (1 Bulan)'].sum()
+    st.write(f"Total Gaji Guru (1 Bulan): {total_gaji}")
 
-        st.write("**Laporan Daftar Ulang**")
-        st.dataframe(df_daftar_ulang)
+    st.write("**Tabel Historis Gaji Guru**")
+    st.dataframe(historical_salaries)
 
-        st.write("**Laporan Pengeluaran**")
-        st.dataframe(df_pengeluaran)
+    st.write("**Laporan Pengeluaran**")
+    st.dataframe(df_pengeluaran)
+    
+    st.write("**Total Pengeluaran (1 Bulan)**")
+    total_pengeluaran = df_pengeluaran['Total Pengeluaran (1 Bulan)'].sum()
+    st.write(f"Total Pengeluaran (1 Bulan): {total_pengeluaran}")
+
+    st.write("**Tabel Historis Pengeluaran**")
+    st.dataframe(historical_expenditures)
+
 
         # Export to Excel
         excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
