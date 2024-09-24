@@ -243,7 +243,7 @@ def main():
             }
         )
 
-    # Streamlit app logic for Pembayaran SPP
+        # Streamlit app logic for Pembayaran SPP
     if selected == "Pembayaran SPP":
         st.title("Pembayaran SPP")
         with st.form("spp_form"):
@@ -271,7 +271,7 @@ def main():
             if search_spp:
                 df_spp = df_spp[df_spp['nama_siswa'].str.contains(search_spp, case=False, na=False)]
             st.dataframe(df_spp)
-
+            
         st.write("**Download Kwitansi Pembayaran SPP**")
         if not df_spp.empty:
             options = list(df_spp.index)
