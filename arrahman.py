@@ -243,6 +243,7 @@ def main():
             }
         )
 
+    # Streamlit app logic for Pembayaran SPP
     if selected == "Pembayaran SPP":
         st.title("Pembayaran SPP")
         with st.form("spp_form"):
@@ -253,16 +254,20 @@ def main():
             biaya_spp = st.number_input("Biaya SPP per Bulan", min_value=0, key="spp_biaya_spp")
             timestamp = get_current_timestamp()
             submitted = st.form_submit_button("Simpan")
-
+    
             if submitted:
                 save_pembayaran_spp(nama_siswa, kelas, bulan, jumlah, biaya_spp, timestamp)
-                df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP)
                 st.success("Pembayaran SPP berhasil disimpan!")
-
+    
         st.write("**Data Pembayaran SPP**")
         search_spp = st.text_input("Cari Siswa", key="search_spp")
         if os.path.exists(CSV_PEMBAYARAN_SPP):
             df_spp = pd.read_csv(CSV_PEMBAYARAN_SPP)
+    
+            # Calculate Total SPP (1 Tahun) and Sisa SPP (1 Tahun)
+            df_spp['Total Tagihan SPP (1 Tahun)'] = df_spp['biaya_spp'] * 12
+            df_spp['Sisa Tagihan SPP (1 Tahun)'] = df_spp['Total Tagihan SPP (1 Tahun)'] - df_spp['jumlah']
+    
             if search_spp:
                 df_spp = df_spp[df_spp['nama_siswa'].str.contains(search_spp, case=False, na=False)]
             st.dataframe(df_spp)
