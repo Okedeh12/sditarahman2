@@ -402,16 +402,6 @@ def main():
         else:
             st.write("Belum ada data pengeluaran.")
 
-import streamlit as st
-import pandas as pd
-
-# Sample DataFrames (replace with your actual data)
-# df_spp = pd.DataFrame({...})  # Your SPP data
-# df_gaji = pd.DataFrame({...})  # Your salary data
-# df_pengeluaran = pd.DataFrame({...})  # Your expenditure data
-# historical_salaries = pd.DataFrame({...})  # Your historical salaries
-# historical_expenditures = pd.DataFrame({...})  # Your historical expenditures
-
 # Streamlit app logic
 if selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
@@ -426,11 +416,11 @@ if selected == "Laporan Keuangan":
 
         # Calculate Total Tagihan SPP (1 Tahun) and Sisa Tagihan SPP
         df_spp['Total Tagihan SPP (1 Tahun)'] = df_spp['SPP Per Bulan'] * 12
-        df_spp['Sisa Tagihan SPP'] = df_spp['Total Tagihan SPP (1 Tahun)'] - df_spp['Jumlah Bayar']
+        df_spp['Sisa Tagihan SPP (1 Tahun)'] = df_spp['Total Tagihan SPP (1 Tahun)'] - df_spp['Jumlah Bayar']
     else:
         st.warning("Kolom 'SPP Per Bulan' atau 'Jumlah Bayar' tidak ditemukan dalam data SPP.")
 
-    # Display the updated DataFrame
+    # Display the updated DataFrame with the new columns
     st.dataframe(df_spp)
 
     st.write("**Laporan Gaji Guru**")
@@ -454,12 +444,8 @@ if selected == "Laporan Keuangan":
     st.dataframe(historical_expenditures)
 
     # Optional: Display specific columns for clarity
-    if 'Total Tagihan SPP (1 Tahun)' in df_spp.columns and 'Sisa Tagihan SPP' in df_spp.columns:
-        st.write("**Detail SPP yang Dihitung**")
-        st.dataframe(df_spp[['SPP Per Bulan', 'Jumlah Bayar', 'Total Tagihan SPP (1 Tahun)', 'Sisa Tagihan SPP']])
-    else:
-        st.warning("Kolom 'Total Tagihan SPP (1 Tahun)' atau 'Sisa Tagihan SPP' tidak tersedia.")
-
+    st.write("**Detail SPP yang Dihitung**")
+    st.dataframe(df_spp[['SPP Per Bulan', 'Jumlah Bayar', 'Total Tagihan SPP (1 Tahun)', 'Sisa Tagihan SPP (1 Tahun)']])
 
         # Export to Excel
         excel_data = export_to_excel(df_spp, df_gaji, df_daftar_ulang, df_pengeluaran)
