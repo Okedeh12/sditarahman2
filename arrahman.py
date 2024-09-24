@@ -403,14 +403,20 @@ def main():
             st.write("Belum ada data pengeluaran.")
 
 # Streamlit app logic
-elif selected == "Laporan Keuangan":
+if selected == "Laporan Keuangan":
     st.title("Laporan Keuangan")
     
     st.write("**Laporan Pembayaran SPP**")
     
+    # Ensure that there are no NaN values
+    df_spp['SPP Per Bulan'] = df_spp['SPP Per Bulan'].fillna(0)
+    df_spp['Jumlah Bayar'] = df_spp['Jumlah Bayar'].fillna(0)
+
     # SPP calculations
     df_spp['Total Tagihan SPP (1 Tahun)'] = df_spp['SPP Per Bulan'] * 12
     df_spp['Sisa Tagihan SPP'] = df_spp['Total Tagihan SPP (1 Tahun)'] - df_spp['Jumlah Bayar']
+    
+    # Display the updated DataFrame
     st.dataframe(df_spp)
 
     st.write("**Laporan Gaji Guru**")
@@ -432,6 +438,10 @@ elif selected == "Laporan Keuangan":
 
     st.write("**Tabel Historis Pengeluaran**")
     st.dataframe(historical_expenditures)
+
+    # Optional: Display specific columns for clarity
+    st.write("**Detail SPP yang Dihitung**")
+    st.dataframe(df_spp[['SPP Per Bulan', 'Jumlah Bayar', 'Total Tagihan SPP (1 Tahun)', 'Sisa Tagihan SPP']])
 
 
         # Export to Excel
