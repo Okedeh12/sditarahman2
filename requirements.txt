@@ -1,6 +1,0 @@
-streamlit
-pandas
-matplotlib
-fpdf
-streamlit-option-menu
-xlsxwriter
