@@ -10,6 +10,7 @@ import chromedriver_autoinstaller
 import io
 import logging
 from streamlit_option_menu import option_menu
+import chromedriver_autoinstaller
 from webdriver_manager.chrome import ChromeDriverManager
 
 
