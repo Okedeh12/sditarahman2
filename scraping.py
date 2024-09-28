@@ -18,13 +18,15 @@ logging.basicConfig(level=logging.INFO)
 def initialize_driver():
     try:
         options = Options()
-        options.headless = False  # Ganti ke True jika ingin headless
+        options.headless = False  # Ubah ke True untuk headless mode
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920x1080")
         options.add_argument("--log-level=ALL")
         options.add_argument("--log-path=/tmp/chromedriver.log")
+        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--disable-infobars")
 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         return driver
@@ -43,7 +45,7 @@ VALID_URLS = {
 def scrape_shopee(product_url):
     driver = initialize_driver()
     if driver is None:
-        return pd.DataFrame()  # Return empty DataFrame if driver initialization failed
+        return pd.DataFrame()
 
     driver.get(product_url)
     time.sleep(2)  # Wait for page to load
@@ -172,17 +174,15 @@ def main():
             st.error("URL tidak valid untuk platform yang dipilih.")
         else:
             if st.button("Scrape Data"):
-                # Tampilkan layar scraping
-                with st.spinner("Mengambil data..."):
-                    if platform == "Shopee":
-                        scraped_data = scrape_shopee(product_url)
-                    elif platform == "Tokopedia":
-                        scraped_data = scrape_tokopedia(product_url)
-                    elif platform == "Bukalapak":
-                        scraped_data = scrape_bukalapak(product_url)
-                    else:
-                        st.error("Platform tidak dikenal")
-                        return
+                if platform == "Shopee":
+                    scraped_data = scrape_shopee(product_url)
+                elif platform == "Tokopedia":
+                    scraped_data = scrape_tokopedia(product_url)
+                elif platform == "Bukalapak":
+                    scraped_data = scrape_bukalapak(product_url)
+                else:
+                    st.error("Platform tidak dikenal")
+                    return
                 
                 if not scraped_data.empty:
                     st.success("Scraping berhasil!")
