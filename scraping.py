@@ -22,6 +22,11 @@ def initialize_driver():
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920x1080")
+        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--disable-extensions")
+        options.add_argument("--enable-logging")
+        options.add_argument("--v=1")
+        options.add_argument("--log-path=/tmp/chromedriver.log")
 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         return driver
@@ -60,7 +65,6 @@ def scrape_product(driver, product_url, platform):
             photo_elements = driver.find_elements(By.CSS_SELECTOR, 'img.image')
 
         photos = [img.get_attribute('src') for img in photo_elements]
-        
     except Exception as e:
         logging.error(f"Error scraping {platform}: {e}")
         st.error(f"Error scraping {platform}: {e}")
