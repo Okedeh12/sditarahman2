@@ -10,6 +10,26 @@ from webdriver_manager.chrome import ChromeDriverManager
 import io
 import time
 from streamlit_option_menu import option_menu
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+
+def initialize_driver():
+    try:
+        options = Options()
+        options.headless = True
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1920x1080")
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        return driver
+    except Exception as e:
+        logging.error(f"Error initializing WebDriver: {e}")
+        st.error("Driver tidak dapat diinisialisasi. Periksa log untuk detail.")
+        return None
+
 
 # Sitemap yang berisi URL produk yang valid untuk scraping
 VALID_URLS = {
