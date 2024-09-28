@@ -11,6 +11,7 @@ import io
 import time
 from streamlit_option_menu import option_menu
 import logging
+import os
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -30,7 +31,7 @@ def initialize_driver():
         return driver
     except Exception as e:
         logging.error(f"Error initializing WebDriver: {e}")
-        st.error(f"Driver tidak dapat diinisialisasi: {e}")
+        st.error("Driver tidak dapat diinisialisasi. Coba lagi nanti.")
         return None
 
 # Valid URLs for scraping
@@ -43,7 +44,7 @@ VALID_URLS = {
 def scrape_shopee(product_url):
     driver = initialize_driver()
     if driver is None:
-        return pd.DataFrame()  # Return empty DataFrame if driver initialization failed
+        return pd.DataFrame()
 
     driver.get(product_url)
     time.sleep(2)  # Wait for page to load
@@ -63,7 +64,8 @@ def scrape_shopee(product_url):
         variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div._3X1D2m')
         variants = [variant.text for variant in variant_elements]
     except Exception as e:
-        st.error(f"Error scraping Shopee: {e}")
+        logging.error(f"Error scraping Shopee: {e}")
+        st.error("Terjadi kesalahan saat mengambil data dari Shopee.")
         return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
     finally:
         driver.quit()
@@ -98,7 +100,8 @@ def scrape_tokopedia(product_url):
         variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div.css-1e8u7w8')
         variants = [variant.text for variant in variant_elements]
     except Exception as e:
-        st.error(f"Error scraping Tokopedia: {e}")
+        logging.error(f"Error scraping Tokopedia: {e}")
+        st.error("Terjadi kesalahan saat mengambil data dari Tokopedia.")
         return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
     finally:
         driver.quit()
@@ -133,7 +136,8 @@ def scrape_bukalapak(product_url):
         variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div.variant-title')
         variants = [variant.text for variant in variant_elements]
     except Exception as e:
-        st.error(f"Error scraping Bukalapak: {e}")
+        logging.error(f"Error scraping Bukalapak: {e}")
+        st.error("Terjadi kesalahan saat mengambil data dari Bukalapak.")
         return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
     finally:
         driver.quit()
