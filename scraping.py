@@ -150,7 +150,6 @@ def main():
 
         # Validasi URL
         if product_url:
-            st.write(f"URL yang dimasukkan: {product_url}")  # Debugging
             if platform == "Shopee" and not ("shopee.co.id/product/" in product_url):
                 st.error("URL tidak valid untuk platform Shopee.")
             elif platform == "Tokopedia" and not ("tokopedia.com" in product_url):
