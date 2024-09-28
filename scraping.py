@@ -10,6 +10,8 @@ import chromedriver_autoinstaller
 import io
 import logging
 from streamlit_option_menu import option_menu
+from webdriver_manager.chrome import ChromeDriverManager
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
