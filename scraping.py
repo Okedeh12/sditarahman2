@@ -22,11 +22,9 @@ def initialize_driver():
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920x1080")
-        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--disable-infobars")
         options.add_argument("--disable-extensions")
-        options.add_argument("--enable-logging")
-        options.add_argument("--v=1")
-        options.add_argument("--log-path=/tmp/chromedriver.log")
+        options.add_argument("--remote-debugging-port=9222")
 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         return driver
