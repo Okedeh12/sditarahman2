@@ -9,15 +9,17 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import io
 import logging
+import time
 from streamlit_option_menu import option_menu
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
 def initialize_driver():
+    """Initialize the Selenium WebDriver."""
     try:
         options = Options()
-        options.headless = False  # Set ke True untuk mode headless
+        options.headless = False  # Set to True for headless mode
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
@@ -25,6 +27,9 @@ def initialize_driver():
         options.add_argument("--disable-infobars")
         options.add_argument("--disable-extensions")
         options.add_argument("--remote-debugging-port=9222")
+
+        # Adding delay before initializing the driver
+        time.sleep(2)
 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         return driver
@@ -41,6 +46,7 @@ VALID_URLS = {
 }
 
 def scrape_product(driver, product_url, platform):
+    """Scrape product details from the specified platform."""
     driver.get(product_url)
     try:
         if platform == "Shopee":
@@ -62,7 +68,6 @@ def scrape_product(driver, product_url, platform):
             description = driver.find_element(By.CSS_SELECTOR, 'div.description').text
             photo_elements = driver.find_elements(By.CSS_SELECTOR, 'img.image')
 
-        # Ambil foto produk
         photos = [img.get_attribute('src') for img in photo_elements]
     except Exception as e:
         logging.error(f"Error scraping {platform}: {e}")
