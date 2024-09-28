@@ -9,8 +9,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import io
 import time
-import logging
 from streamlit_option_menu import option_menu
+import logging
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 def initialize_driver():
     try:
         options = Options()
-        options.headless = True
+        options.headless = False  # Ubah ke True untuk mode headless
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
@@ -27,10 +27,10 @@ def initialize_driver():
         return driver
     except Exception as e:
         logging.error(f"Error initializing WebDriver: {e}")
-        st.error("Driver tidak dapat diinisialisasi. Periksa log untuk detail.")
+        st.error(f"Driver tidak dapat diinisialisasi: {e}")
         return None
 
-# Valid URLs for different platforms
+# Sitemap yang berisi URL produk yang valid untuk scraping
 VALID_URLS = {
     "Shopee": "https://shopee.co.id/product/",
     "Tokopedia": "https://www.tokopedia.com/",
@@ -39,8 +39,11 @@ VALID_URLS = {
 
 def scrape_shopee(product_url):
     driver = initialize_driver()
+    if driver is None:
+        return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
+    
     driver.get(product_url)
-    time.sleep(2)
+    time.sleep(2)  # Delay untuk memuat halaman dengan baik
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div._3e_UQe')))
@@ -49,9 +52,11 @@ def scrape_shopee(product_url):
         price = driver.find_element(By.CSS_SELECTOR, 'div._3n5NQd').text
         description = driver.find_element(By.CSS_SELECTOR, 'div._1DpsGB').text
         
+        # Ambil foto produk
         photo_elements = driver.find_elements(By.CSS_SELECTOR, 'img._1eZ12s')
         photos = [img.get_attribute('src') for img in photo_elements]
         
+        # Ambil varian produk
         variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div._3X1D2m')
         variants = [variant.text for variant in variant_elements]
     except Exception as e:
@@ -71,8 +76,11 @@ def scrape_shopee(product_url):
 
 def scrape_tokopedia(product_url):
     driver = initialize_driver()
+    if driver is None:
+        return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
+
     driver.get(product_url)
-    time.sleep(2)
+    time.sleep(2)  # Delay untuk memuat halaman dengan baik
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h1.css-1z7w6s2')))
@@ -81,9 +89,11 @@ def scrape_tokopedia(product_url):
         price = driver.find_element(By.CSS_SELECTOR, 'span.css-o0fgw0').text
         description = driver.find_element(By.CSS_SELECTOR, 'div.css-1c5uq6j').text
         
+        # Ambil foto produk
         photo_elements = driver.find_elements(By.CSS_SELECTOR, 'img.css-1gk1d34')
         photos = [img.get_attribute('src') for img in photo_elements]
         
+        # Ambil varian produk
         variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div.css-1e8u7w8')
         variants = [variant.text for variant in variant_elements]
     except Exception as e:
@@ -103,8 +113,11 @@ def scrape_tokopedia(product_url):
 
 def scrape_bukalapak(product_url):
     driver = initialize_driver()
+    if driver is None:
+        return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
+
     driver.get(product_url)
-    time.sleep(2)
+    time.sleep(2)  # Delay untuk memuat halaman dengan baik
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h1.product-title')))
@@ -113,9 +126,11 @@ def scrape_bukalapak(product_url):
         price = driver.find_element(By.CSS_SELECTOR, 'span.price').text
         description = driver.find_element(By.CSS_SELECTOR, 'div.description').text
         
+        # Ambil foto produk
         photo_elements = driver.find_elements(By.CSS_SELECTOR, 'img.image')
         photos = [img.get_attribute('src') for img in photo_elements]
         
+        # Ambil varian produk
         variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div.variant-title')
         variants = [variant.text for variant in variant_elements]
     except Exception as e:
