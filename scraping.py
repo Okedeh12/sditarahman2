@@ -23,14 +23,14 @@ def initialize_driver():
     options.headless = True  # Mode headless untuk menjalankan Chrome tanpa UI
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")  # Tambahkan ini
+    options.add_argument("--disable-gpu")  # Tambahan
+    options.add_argument("--window-size=1920x1080")  # Atur ukuran jendela
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     return driver
 
 def scrape_shopee(product_url):
     driver = initialize_driver()
     driver.get(product_url)
-
     time.sleep(2)  # Delay untuk memuat halaman dengan baik
 
     try:
@@ -65,7 +65,6 @@ def scrape_shopee(product_url):
 def scrape_tokopedia(product_url):
     driver = initialize_driver()
     driver.get(product_url)
-
     time.sleep(2)  # Delay untuk memuat halaman dengan baik
 
     try:
@@ -100,7 +99,6 @@ def scrape_tokopedia(product_url):
 def scrape_bukalapak(product_url):
     driver = initialize_driver()
     driver.get(product_url)
-
     time.sleep(2)  # Delay untuk memuat halaman dengan baik
 
     try:
@@ -190,7 +188,7 @@ def main():
                 else:
                     st.error("Tidak ada data yang ditemukan untuk URL yang diberikan.")
             else:
-                st.error("Harap masukkan URL produk.")
+                st.error("Harap masukkan URL produk")
 
 if __name__ == "__main__":
     main()
