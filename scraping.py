@@ -178,19 +178,19 @@ def main():
         with col1:
             if st.button("Shopee"):
                 st.session_state.selected_platform = "Shopee"
-            st.image("https://upload.wikimedia.org/shopee_logo.png", width=100)  # Ganti dengan URL logo Shopee
+            st.image("https://upload.wikimedia.org/shopee_logo.png", width=100)
             st.write("Ambil data dari Shopee.")
 
         with col2:
             if st.button("Tokopedia"):
                 st.session_state.selected_platform = "Tokopedia"
-            st.image("https://upload.wikimedia.org/tokopedia_logo.png", width=100)  # Ganti dengan URL logo Tokopedia
+            st.image("https://upload.wikimedia.org/tokopedia_logo.png", width=100)
             st.write("Ambil data dari Tokopedia.")
 
         with col3:
             if st.button("Bukalapak"):
                 st.session_state.selected_platform = "Bukalapak"
-            st.image("https://upload.wikimedia.org/bukalapak_logo.png", width=100)  # Ganti dengan URL logo Bukalapak
+            st.image("https://upload.wikimedia.org/bukalapak_logo.png", width=100)
             st.write("Ambil data dari Bukalapak.")
 
         # Input URL only if platform is selected
@@ -201,6 +201,15 @@ def main():
                 st.error("URL tidak valid untuk platform yang dipilih.")
             else:
                 if st.button("Scrape Data"):
+                    # Show the selected platform logo during scraping
+                    platform_logo = {
+                        "Shopee": "https://upload.wikimedia.org/shopee_logo.png",
+                        "Tokopedia": "https://upload.wikimedia.org/tokopedia_logo.png",
+                        "Bukalapak": "https://upload.wikimedia.org/bukalapak_logo.png"
+                    }
+                    st.image(platform_logo[st.session_state.selected_platform], width=150)
+                    st.write(f"Proses scraping data dari **{st.session_state.selected_platform}**...")
+
                     progress = st.progress(0)  # Initialize progress bar
                     if st.session_state.selected_platform == "Shopee":
                         scraped_data = scrape_shopee(product_url, progress)
@@ -220,7 +229,6 @@ def main():
                         for photo in scraped_data['Photos'][0]:
                             st.image(photo, use_column_width=True)
 
-                        # Save scraping results to CSV
                         csv_io = io.StringIO()
                         scraped_data.to_csv(csv_io, index=False)
                         csv_io.seek(0)
@@ -233,8 +241,8 @@ def main():
                         )
                     else:
                         st.error("Tidak ada data yang ditemukan untuk URL yang diberikan.")
-                else:
-                    st.error("Harap masukkan URL produk.")
+        else:
+            st.error("Harap pilih platform terlebih dahulu.")
 
 if __name__ == "__main__":
     main()
