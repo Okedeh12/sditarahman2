@@ -60,6 +60,7 @@ def scrape_product(driver, product_url, platform):
             photo_elements = driver.find_elements(By.CSS_SELECTOR, 'img.image')
 
         photos = [img.get_attribute('src') for img in photo_elements]
+        
     except Exception as e:
         logging.error(f"Error scraping {platform}: {e}")
         st.error(f"Error scraping {platform}: {e}")
