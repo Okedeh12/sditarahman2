@@ -6,10 +6,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+import chromedriver_autoinstaller
 import io
 import logging
-import time
 from streamlit_option_menu import option_menu
 
 # Set up logging
@@ -18,20 +17,17 @@ logging.basicConfig(level=logging.INFO)
 def initialize_driver():
     """Initialize the Selenium WebDriver."""
     try:
+        # Install chromedriver automatically
+        chromedriver_autoinstaller.install()
+
         options = Options()
         options.headless = False  # Set to True for headless mode
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920x1080")
-        options.add_argument("--disable-infobars")
-        options.add_argument("--disable-extensions")
-        options.add_argument("--remote-debugging-port=9222")
 
-        # Adding delay before initializing the driver
-        time.sleep(2)
-
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver = webdriver.Chrome(service=Service(), options=options)
         return driver
     except Exception as e:
         logging.error(f"Error initializing WebDriver: {e}")
@@ -46,7 +42,6 @@ VALID_URLS = {
 }
 
 def scrape_product(driver, product_url, platform):
-    """Scrape product details from the specified platform."""
     driver.get(product_url)
     try:
         if platform == "Shopee":
@@ -73,7 +68,7 @@ def scrape_product(driver, product_url, platform):
         logging.error(f"Error scraping {platform}: {e}")
         st.error(f"Error scraping {platform}: {e}")
         return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Photos'])
-    
+
     data = {
         'Product Name': [product_name],
         'Price': [price],
