@@ -1,6 +1,6 @@
-pip install streamlit==1.38.0
-pip install selenium==4.25.0
-pip install chromedriver-autoinstaller==0.6.4
-pip install webdriver-manager==3.8.5
-pip install pandas
-pip install streamlit-option-menu==0.0.2
+streamlit==1.38.0
+selenium==4.25.0
+chromedriver-autoinstaller==0.6.4
+webdriver-manager==3.8.5
+pandas
+streamlit-option-menu==0.0.2
