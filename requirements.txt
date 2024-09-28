@@ -1,5 +1,5 @@
+selenium>=4.0.0
+webdriver-manager>=3.0.0
 streamlit
-selenium
-webdriver-manager
 streamlit-option-menu
 pandas
