@@ -18,14 +18,13 @@ logging.basicConfig(level=logging.INFO)
 def initialize_driver():
     try:
         options = Options()
-        options.headless = False  # Ganti ke False untuk debugging
+        options.headless = False  # Set to True for headless mode
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920x1080")
-        options.add_argument("--log-level=ALL")  # Enable logging
-        options.add_argument("--log-path=/tmp/chromedriver.log")  # Specify log file path
 
+        # Initialize the driver
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         return driver
     except Exception as e:
@@ -43,10 +42,10 @@ VALID_URLS = {
 def scrape_shopee(product_url):
     driver = initialize_driver()
     if driver is None:
-        return pd.DataFrame()  # Return empty DataFrame if driver initialization failed
+        return pd.DataFrame()
 
     driver.get(product_url)
-    time.sleep(2)  # Wait for page to load
+    time.sleep(2)
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div._3e_UQe')))
@@ -55,15 +54,14 @@ def scrape_shopee(product_url):
         price = driver.find_element(By.CSS_SELECTOR, 'div._3n5NQd').text
         description = driver.find_element(By.CSS_SELECTOR, 'div._1DpsGB').text
         
-        # Get product photos
         photo_elements = driver.find_elements(By.CSS_SELECTOR, 'img._1eZ12s')
         photos = [img.get_attribute('src') for img in photo_elements]
         
-        # Get product variants
         variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div._3X1D2m')
         variants = [variant.text for variant in variant_elements]
     except Exception as e:
-        st.error(f"Error scraping Shopee: {e}")
+        logging.error(f"Error scraping Shopee: {e}")
+        st.error(f"Terjadi kesalahan saat mengambil data dari Shopee: {e}")
         return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
     finally:
         driver.quit()
@@ -98,7 +96,8 @@ def scrape_tokopedia(product_url):
         variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div.css-1e8u7w8')
         variants = [variant.text for variant in variant_elements]
     except Exception as e:
-        st.error(f"Error scraping Tokopedia: {e}")
+        logging.error(f"Error scraping Tokopedia: {e}")
+        st.error(f"Terjadi kesalahan saat mengambil data dari Tokopedia: {e}")
         return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
     finally:
         driver.quit()
@@ -133,7 +132,8 @@ def scrape_bukalapak(product_url):
         variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div.variant-title')
         variants = [variant.text for variant in variant_elements]
     except Exception as e:
-        st.error(f"Error scraping Bukalapak: {e}")
+        logging.error(f"Error scraping Bukalapak: {e}")
+        st.error(f"Terjadi kesalahan saat mengambil data dari Bukalapak: {e}")
         return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
     finally:
         driver.quit()
@@ -151,7 +151,6 @@ def main():
     st.title("Scraping Produk Marketplace")
     st.markdown("### Mengambil data produk dari Shopee, Tokopedia, dan Bukalapak")
 
-    # Sidebar menu
     with st.sidebar:
         selected = option_menu("Menu", 
                                ["Home", "Scrape Data"],
@@ -167,7 +166,6 @@ def main():
         platform = st.selectbox("Pilih Platform", ["Shopee", "Tokopedia", "Bukalapak"])
         product_url = st.text_input("Masukkan URL Produk")
 
-        # Validate URL
         if product_url and not product_url.startswith(VALID_URLS[platform]):
             st.error("URL tidak valid untuk platform yang dipilih.")
         else:
@@ -186,7 +184,6 @@ def main():
                     st.success("Scraping berhasil!")
                     st.write(scraped_data[['Product Name', 'Price', 'Description', 'Variants']])
                     
-                    # Display product photos
                     st.subheader("Foto Produk")
                     for photo in scraped_data['Photos'][0]:
                         st.image(photo, use_column_width=True)
@@ -205,7 +202,7 @@ def main():
                 else:
                     st.error("Tidak ada data yang ditemukan untuk URL yang diberikan.")
             else:
-                st.error("Harap masukkan URL produk")
+                st.error("Harap masukkan URL produk.")
 
 if __name__ == "__main__":
     main()
