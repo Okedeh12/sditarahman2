@@ -10,7 +10,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 import io
 import time
 from streamlit_option_menu import option_menu
-import matplotlib.pyplot as plt
 
 # Sitemap yang berisi URL produk yang valid untuk scraping
 VALID_URLS = {
@@ -30,12 +29,10 @@ def initialize_driver():
 def scrape_shopee(product_url):
     driver = initialize_driver()
     driver.get(product_url)
-
     time.sleep(2)  # Delay untuk memuat halaman dengan baik
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div._3e_UQe')))
-        
         product_name = driver.find_element(By.CSS_SELECTOR, 'div._3e_UQe').text
         price = driver.find_element(By.CSS_SELECTOR, 'div._3n5NQd').text
         description = driver.find_element(By.CSS_SELECTOR, 'div._1DpsGB').text
@@ -65,12 +62,10 @@ def scrape_shopee(product_url):
 def scrape_tokopedia(product_url):
     driver = initialize_driver()
     driver.get(product_url)
-
     time.sleep(2)  # Delay untuk memuat halaman dengan baik
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h1.css-1z7w6s2')))
-        
         product_name = driver.find_element(By.CSS_SELECTOR, 'h1.css-1z7w6s2').text
         price = driver.find_element(By.CSS_SELECTOR, 'span.css-o0fgw0').text
         description = driver.find_element(By.CSS_SELECTOR, 'div.css-1c5uq6j').text
@@ -100,12 +95,10 @@ def scrape_tokopedia(product_url):
 def scrape_bukalapak(product_url):
     driver = initialize_driver()
     driver.get(product_url)
-
     time.sleep(2)  # Delay untuk memuat halaman dengan baik
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h1.product-title')))
-        
         product_name = driver.find_element(By.CSS_SELECTOR, 'h1.product-title').text
         price = driver.find_element(By.CSS_SELECTOR, 'span.price').text
         description = driver.find_element(By.CSS_SELECTOR, 'div.description').text
