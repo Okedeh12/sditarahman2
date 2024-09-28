@@ -9,7 +9,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import io
 import time
-from streamlit_option_menu import option_menu
 import logging
 
 # Set up logging
