@@ -10,27 +10,20 @@ import chromedriver_autoinstaller
 import io
 import logging
 from streamlit_option_menu import option_menu
-import chromedriver_autoinstaller
-from webdriver_manager.chrome import ChromeDriverManager
-
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
 def initialize_driver():
-    """Initialize the Selenium WebDriver."""
     try:
-        # Install chromedriver automatically
-        chromedriver_autoinstaller.install()
-
+        chromedriver_autoinstaller.install()  # Install ChromeDriver automatically
         options = Options()
-        options.headless = False  # Set to True for headless mode
+        options.headless = False  # Set ke True untuk mode headless
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920x1080")
-
-        driver = webdriver.Chrome(service=Service(), options=options)
+        driver = webdriver.Chrome(options=options)
         return driver
     except Exception as e:
         logging.error(f"Error initializing WebDriver: {e}")
@@ -71,7 +64,7 @@ def scrape_product(driver, product_url, platform):
         logging.error(f"Error scraping {platform}: {e}")
         st.error(f"Error scraping {platform}: {e}")
         return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Photos'])
-
+    
     data = {
         'Product Name': [product_name],
         'Price': [price],
