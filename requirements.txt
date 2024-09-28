@@ -4,3 +4,7 @@ pandas
 streamlit
 xlsxwriter
 matplotlib
+streamlit
+pandas
+selenium
+webdriver-manager
