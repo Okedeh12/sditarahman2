@@ -13,12 +13,12 @@ from streamlit_option_menu import option_menu
 import logging
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 def initialize_driver():
     try:
         options = Options()
-        options.headless = True  # Set to True for no GUI during scraping
+        options.headless = False  # Set to True for no GUI during scraping
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
@@ -47,6 +47,7 @@ def scrape_platform(product_url, platform):
 
     try:
         if platform == "Shopee":
+            logging.debug("Scraping Shopee...")
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div._3e_UQe')))
             product_name = driver.find_element(By.CSS_SELECTOR, 'div._3e_UQe').text
             price = driver.find_element(By.CSS_SELECTOR, 'div._3n5NQd').text
@@ -58,6 +59,7 @@ def scrape_platform(product_url, platform):
             variants = [variant.text for variant in variant_elements]
 
         elif platform == "Tokopedia":
+            logging.debug("Scraping Tokopedia...")
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h1.css-1z7w6s2')))
             product_name = driver.find_element(By.CSS_SELECTOR, 'h1.css-1z7w6s2').text
             price = driver.find_element(By.CSS_SELECTOR, 'span.css-o0fgw0').text
@@ -69,6 +71,7 @@ def scrape_platform(product_url, platform):
             variants = [variant.text for variant in variant_elements]
 
         elif platform == "Bukalapak":
+            logging.debug("Scraping Bukalapak...")
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h1.product-title')))
             product_name = driver.find_element(By.CSS_SELECTOR, 'h1.product-title').text
             price = driver.find_element(By.CSS_SELECTOR, 'span.price').text
@@ -82,8 +85,8 @@ def scrape_platform(product_url, platform):
         else:
             raise ValueError("Platform tidak dikenal")
 
-        screenshot = driver.get_screenshot_as_png()
     except Exception as e:
+        logging.error(f"Error scraping {platform}: {e}")
         st.error(f"Error scraping {platform}: {e}")
         return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos']), None
     finally:
@@ -96,7 +99,7 @@ def scrape_platform(product_url, platform):
         'Variants': [', '.join(variants)],
         'Photos': [photos]
     }
-    return pd.DataFrame(data), screenshot
+    return pd.DataFrame(data), None
 
 def main():
     st.title("Aplikasi Scraping Produk Marketplace")
@@ -122,7 +125,7 @@ def main():
         else:
             if st.button("Scrape Data"):
                 with st.spinner("Sedang melakukan scraping..."):
-                    scraped_data, screenshot = scrape_platform(product_url, platform)
+                    scraped_data, _ = scrape_platform(product_url, platform)
                 
                 if not scraped_data.empty:
                     st.success("Scraping berhasil!")
@@ -131,9 +134,6 @@ def main():
                     st.subheader("Foto Produk")
                     for photo in scraped_data['Photos'][0]:
                         st.image(photo, use_column_width=True)
-                    
-                    st.subheader("Tampilan Halaman Saat Scraping")
-                    st.image(screenshot, use_column_width=True)
 
                     csv_io = io.StringIO()
                     scraped_data.to_csv(csv_io, index=False)
