@@ -9,7 +9,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import io
 import time
-from streamlit_option_menu import option_menu
+from PIL import Image
+import base64
 import logging
 
 # Set up logging
@@ -40,13 +41,18 @@ VALID_URLS = {
     "Bukalapak": "https://www.bukalapak.com/"
 }
 
+def take_screenshot(driver):
+    time.sleep(2)  # Ensure page loads completely
+    screenshot = driver.get_screenshot_as_png()
+    return screenshot
+
 def scrape_shopee(product_url, progress):
     driver = initialize_driver()
     if driver is None:
-        return pd.DataFrame()  # Return empty DataFrame if driver initialization failed
+        return pd.DataFrame()
 
     driver.get(product_url)
-    time.sleep(2)  # Wait for page to load
+    screenshot = take_screenshot(driver)
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div._3e_UQe')))
@@ -77,7 +83,7 @@ def scrape_shopee(product_url, progress):
         'Variants': [', '.join(variants)],
         'Photos': [photos]
     }
-    return pd.DataFrame(data)
+    return pd.DataFrame(data), screenshot
 
 def scrape_tokopedia(product_url, progress):
     driver = initialize_driver()
@@ -85,7 +91,7 @@ def scrape_tokopedia(product_url, progress):
         return pd.DataFrame()
 
     driver.get(product_url)
-    time.sleep(2)
+    screenshot = take_screenshot(driver)
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h1.css-1z7w6s2')))
@@ -114,7 +120,7 @@ def scrape_tokopedia(product_url, progress):
         'Variants': [', '.join(variants)],
         'Photos': [photos]
     }
-    return pd.DataFrame(data)
+    return pd.DataFrame(data), screenshot
 
 def scrape_bukalapak(product_url, progress):
     driver = initialize_driver()
@@ -122,7 +128,7 @@ def scrape_bukalapak(product_url, progress):
         return pd.DataFrame()
 
     driver.get(product_url)
-    time.sleep(2)
+    screenshot = take_screenshot(driver)
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h1.product-title')))
@@ -151,98 +157,64 @@ def scrape_bukalapak(product_url, progress):
         'Variants': [', '.join(variants)],
         'Photos': [photos]
     }
-    return pd.DataFrame(data)
+    return pd.DataFrame(data), screenshot
 
 def main():
     st.title("Scraping Produk Marketplace")
     st.markdown("### Mengambil data produk dari Shopee, Tokopedia, dan Bukalapak")
 
     # Sidebar menu
-    with st.sidebar:
-        selected = option_menu("Menu", 
-                               ["Home", "Scrape Data"],
-                               icons=['house', 'cloud-upload'],
-                               menu_icon="cast", 
-                               default_index=1)
+    selected = st.sidebar.selectbox("Pilih Menu", ["Home", "Scrape Data"])
 
     if selected == "Home":
         st.write("Selamat datang di aplikasi scraping produk!")
         st.write("Pilih menu 'Scrape Data' untuk mulai mengambil data produk.")
 
     elif selected == "Scrape Data":
-        st.markdown("### Pilih Platform untuk Scraping")
+        platform = st.selectbox("Pilih Platform", ["Shopee", "Tokopedia", "Bukalapak"])
+        product_url = st.text_input("Masukkan URL Produk")
 
-        # Display platform options
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            if st.button("Shopee"):
-                st.session_state.selected_platform = "Shopee"
-            st.image("https://upload.wikimedia.org/shopee_logo.png", width=100)
-            st.write("Ambil data dari Shopee.")
-
-        with col2:
-            if st.button("Tokopedia"):
-                st.session_state.selected_platform = "Tokopedia"
-            st.image("https://upload.wikimedia.org/tokopedia_logo.png", width=100)
-            st.write("Ambil data dari Tokopedia.")
-
-        with col3:
-            if st.button("Bukalapak"):
-                st.session_state.selected_platform = "Bukalapak"
-            st.image("https://upload.wikimedia.org/bukalapak_logo.png", width=100)
-            st.write("Ambil data dari Bukalapak.")
-
-        # Input URL only if platform is selected
-        if 'selected_platform' in st.session_state:
-            product_url = st.text_input("Masukkan URL Produk")
-
-            if product_url and not product_url.startswith(VALID_URLS[st.session_state.selected_platform]):
-                st.error("URL tidak valid untuk platform yang dipilih.")
-            else:
-                if st.button("Scrape Data"):
-                    # Show the selected platform logo during scraping
-                    platform_logo = {
-                        "Shopee": "https://upload.wikimedia.org/shopee_logo.png",
-                        "Tokopedia": "https://upload.wikimedia.org/tokopedia_logo.png",
-                        "Bukalapak": "https://upload.wikimedia.org/bukalapak_logo.png"
-                    }
-                    st.image(platform_logo[st.session_state.selected_platform], width=150)
-                    st.write(f"Proses scraping data dari **{st.session_state.selected_platform}**...")
-
-                    progress = st.progress(0)  # Initialize progress bar
-                    if st.session_state.selected_platform == "Shopee":
-                        scraped_data = scrape_shopee(product_url, progress)
-                    elif st.session_state.selected_platform == "Tokopedia":
-                        scraped_data = scrape_tokopedia(product_url, progress)
-                    elif st.session_state.selected_platform == "Bukalapak":
-                        scraped_data = scrape_bukalapak(product_url, progress)
-                    else:
-                        st.error("Platform tidak dikenal")
-                        return
-
-                    if not scraped_data.empty:
-                        st.success("Scraping berhasil!")
-                        st.write(scraped_data[['Product Name', 'Price', 'Description', 'Variants']])
-
-                        st.subheader("Foto Produk")
-                        for photo in scraped_data['Photos'][0]:
-                            st.image(photo, use_column_width=True)
-
-                        csv_io = io.StringIO()
-                        scraped_data.to_csv(csv_io, index=False)
-                        csv_io.seek(0)
-
-                        st.download_button(
-                            label="Download CSV",
-                            data=csv_io.getvalue(),
-                            file_name="scraped_data.csv",
-                            mime="text/csv"
-                        )
-                    else:
-                        st.error("Tidak ada data yang ditemukan untuk URL yang diberikan.")
+        if product_url and not product_url.startswith(VALID_URLS[platform]):
+            st.error("URL tidak valid untuk platform yang dipilih.")
         else:
-            st.error("Harap pilih platform terlebih dahulu.")
+            if st.button("Scrape Data"):
+                st.write(f"Proses scraping data dari **{platform}**...")
+
+                progress = st.progress(0)  # Initialize progress bar
+                if platform == "Shopee":
+                    scraped_data, screenshot = scrape_shopee(product_url, progress)
+                elif platform == "Tokopedia":
+                    scraped_data, screenshot = scrape_tokopedia(product_url, progress)
+                elif platform == "Bukalapak":
+                    scraped_data, screenshot = scrape_bukalapak(product_url, progress)
+                else:
+                    st.error("Platform tidak dikenal")
+                    return
+
+                # Show the screenshot
+                if screenshot:
+                    st.image(screenshot, caption=f"Layar {platform}", use_column_width=True)
+
+                if not scraped_data.empty:
+                    st.success("Scraping berhasil!")
+                    st.write(scraped_data[['Product Name', 'Price', 'Description', 'Variants']])
+
+                    st.subheader("Foto Produk")
+                    for photo in scraped_data['Photos'][0]:
+                        st.image(photo, use_column_width=True)
+
+                    csv_io = io.StringIO()
+                    scraped_data.to_csv(csv_io, index=False)
+                    csv_io.seek(0)
+
+                    st.download_button(
+                        label="Download CSV",
+                        data=csv_io.getvalue(),
+                        file_name="scraped_data.csv",
+                        mime="text/csv"
+                    )
+                else:
+                    st.error("Tidak ada data yang ditemukan untuk URL yang diberikan.")
 
 if __name__ == "__main__":
     main()
