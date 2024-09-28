@@ -3,4 +3,4 @@ selenium==4.25.0
 chromedriver-autoinstaller==0.6.4
 webdriver-manager==3.8.5
 pandas
-streamlit-option-menu==0.0.2
+streamlit-option-menu==0.3.13
