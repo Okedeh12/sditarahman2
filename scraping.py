@@ -58,72 +58,6 @@ def scrape_shopee(product_url):
     }
     return pd.DataFrame(data)
 
-# Fungsi untuk scraping Tokopedia
-def scrape_tokopedia(product_url):
-    driver = initialize_driver()
-    driver.get(product_url)
-    time.sleep(2)
-
-    try:
-        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h1.css-1z7w6s2')))
-        
-        product_name = driver.find_element(By.CSS_SELECTOR, 'h1.css-1z7w6s2').text
-        price = driver.find_element(By.CSS_SELECTOR, 'span.css-o0fgw0').text
-        description = driver.find_element(By.CSS_SELECTOR, 'div.css-1c5uq6j').text
-        
-        photo_elements = driver.find_elements(By.CSS_SELECTOR, 'img.css-1gk1d34')
-        photos = [img.get_attribute('src') for img in photo_elements]
-        
-        variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div.css-1e8u7w8')
-        variants = [variant.text for variant in variant_elements]
-    except Exception as e:
-        st.error(f"Error scraping Tokopedia: {e}")
-        return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
-    finally:
-        driver.quit()
-
-    data = {
-        'Product Name': [product_name],
-        'Price': [price],
-        'Description': [description],
-        'Variants': [', '.join(variants)],
-        'Photos': [photos]
-    }
-    return pd.DataFrame(data)
-
-# Fungsi untuk scraping Bukalapak
-def scrape_bukalapak(product_url):
-    driver = initialize_driver()
-    driver.get(product_url)
-    time.sleep(2)
-
-    try:
-        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h1.product-title')))
-        
-        product_name = driver.find_element(By.CSS_SELECTOR, 'h1.product-title').text
-        price = driver.find_element(By.CSS_SELECTOR, 'span.price').text
-        description = driver.find_element(By.CSS_SELECTOR, 'div.description').text
-        
-        photo_elements = driver.find_elements(By.CSS_SELECTOR, 'img.image')
-        photos = [img.get_attribute('src') for img in photo_elements]
-        
-        variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div.variant-title')
-        variants = [variant.text for variant in variant_elements]
-    except Exception as e:
-        st.error(f"Error scraping Bukalapak: {e}")
-        return pd.DataFrame(columns=['Product Name', 'Price', 'Description', 'Variants', 'Photos'])
-    finally:
-        driver.quit()
-
-    data = {
-        'Product Name': [product_name],
-        'Price': [price],
-        'Description': [description],
-        'Variants': [', '.join(variants)],
-        'Photos': [photos]
-    }
-    return pd.DataFrame(data)
-
 def main():
     st.title("Scraping Produk Marketplace")
     st.markdown("### Mengambil data produk dari Shopee, Tokopedia, dan Bukalapak")
@@ -157,9 +91,13 @@ def main():
                     if platform == "Shopee":
                         scraped_data = scrape_shopee(product_url)
                     elif platform == "Tokopedia":
-                        scraped_data = scrape_tokopedia(product_url)
+                        # Implementasikan fungsi scraping untuk Tokopedia
+                        st.error("Scraping untuk Tokopedia belum diimplementasikan.")
+                        return
                     elif platform == "Bukalapak":
-                        scraped_data = scrape_bukalapak(product_url)
+                        # Implementasikan fungsi scraping untuk Bukalapak
+                        st.error("Scraping untuk Bukalapak belum diimplementasikan.")
+                        return
                     
                     if not scraped_data.empty:
                         st.success("Scraping berhasil!")
