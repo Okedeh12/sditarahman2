@@ -18,13 +18,13 @@ logging.basicConfig(level=logging.INFO)
 def initialize_driver():
     try:
         options = Options()
-        options.headless = False  # Ubah ke True untuk headless mode
+        options.headless = False  # Ganti ke True jika ingin headless
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920x1080")
         options.add_argument("--log-level=ALL")
-        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--log-path=/tmp/chromedriver.log")
 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         return driver
@@ -43,10 +43,10 @@ VALID_URLS = {
 def scrape_shopee(product_url):
     driver = initialize_driver()
     if driver is None:
-        return pd.DataFrame()
+        return pd.DataFrame()  # Return empty DataFrame if driver initialization failed
 
     driver.get(product_url)
-    time.sleep(2)  # Tunggu halaman dimuat
+    time.sleep(2)  # Wait for page to load
 
     try:
         WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div._3e_UQe')))
@@ -55,11 +55,11 @@ def scrape_shopee(product_url):
         price = driver.find_element(By.CSS_SELECTOR, 'div._3n5NQd').text
         description = driver.find_element(By.CSS_SELECTOR, 'div._1DpsGB').text
         
-        # Ambil foto produk
+        # Get product photos
         photo_elements = driver.find_elements(By.CSS_SELECTOR, 'img._1eZ12s')
         photos = [img.get_attribute('src') for img in photo_elements]
         
-        # Ambil varian produk
+        # Get product variants
         variant_elements = driver.find_elements(By.CSS_SELECTOR, 'div._3X1D2m')
         variants = [variant.text for variant in variant_elements]
     except Exception as e:
@@ -167,20 +167,22 @@ def main():
         platform = st.selectbox("Pilih Platform", ["Shopee", "Tokopedia", "Bukalapak"])
         product_url = st.text_input("Masukkan URL Produk")
 
-        # Validasi URL
+        # Validate URL
         if product_url and not product_url.startswith(VALID_URLS[platform]):
             st.error("URL tidak valid untuk platform yang dipilih.")
         else:
             if st.button("Scrape Data"):
-                if platform == "Shopee":
-                    scraped_data = scrape_shopee(product_url)
-                elif platform == "Tokopedia":
-                    scraped_data = scrape_tokopedia(product_url)
-                elif platform == "Bukalapak":
-                    scraped_data = scrape_bukalapak(product_url)
-                else:
-                    st.error("Platform tidak dikenal")
-                    return
+                # Tampilkan layar scraping
+                with st.spinner("Mengambil data..."):
+                    if platform == "Shopee":
+                        scraped_data = scrape_shopee(product_url)
+                    elif platform == "Tokopedia":
+                        scraped_data = scrape_tokopedia(product_url)
+                    elif platform == "Bukalapak":
+                        scraped_data = scrape_bukalapak(product_url)
+                    else:
+                        st.error("Platform tidak dikenal")
+                        return
                 
                 if not scraped_data.empty:
                     st.success("Scraping berhasil!")
@@ -191,7 +193,7 @@ def main():
                     for photo in scraped_data['Photos'][0]:
                         st.image(photo, use_column_width=True)
                     
-                    # Simpan hasil scraping ke CSV
+                    # Save scraping results to CSV
                     csv_io = io.StringIO()
                     scraped_data.to_csv(csv_io, index=False)
                     csv_io.seek(0)
